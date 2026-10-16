@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+# Pre-commit checks for the dotfiles repo. Fast by design: only checks staged file types.
+#   Run every check on the whole repo:  .githooks/pre-commit --all
+# Note: checks run against the working tree, so stage everything you want verified.
+set -uo pipefail
+
+cd "$(git rev-parse --show-toplevel)" || exit 1
+
+if [[ "${1:-}" == "--all" ]]; then
+    mapfile -t files < <(git ls-files --cached --others --exclude-standard)
+else
+    mapfile -t files < <(git diff --cached --name-only --diff-filter=ACMR)
+fi
+((${#files[@]})) || exit 0
+
+fail=0
+lua=() sh=() hypr=0
+for f in "${files[@]}"; do
+    [[ -f "$f" ]] || continue
+    case "$f" in
+        *.lua) lua+=("$f") ;;
+        *.sh) sh+=("$f") ;;
+        .githooks/*) sh+=("$f") ;;
+    esac
+    [[ "$f" == hypr/* ]] && hypr=1
+done
+
+run() { # run <label> <cmd...>
+    local label=$1; shift
+    if ! out=$("$@" 2>&1); then
+        printf '\e[31m✗ %s\e[0m\n%s\n' "$label" "$out"
+        fail=1
+    else
+        printf '\e[32m✓ %s\e[0m\n' "$label"
+    fi
+}
+
+need() { command -v "$1" >/dev/null || { printf '\e[33m! %s not installed, skipping\e[0m\n' "$1"; return 1; }; }
+
+if ((hypr)) && need Hyprland; then
+    cfg=hypr/dot-config/hypr/hyprland.lua
+    verify() { Hyprland --verify-config -c "$cfg" 2>&1 | grep -q '^config ok$' || { Hyprland --verify-config -c "$cfg" 2>&1 | tail -5; return 1; }; }
+    run "Hyprland --verify-config" verify
+fi
+if ((${#lua[@]})) && need stylua; then
+    run "stylua --check (${#lua[@]} files)" stylua --check "${lua[@]}"
+fi
+if ((${#sh[@]})) && need shellcheck; then
+    run "shellcheck (${#sh[@]} files)" shellcheck "${sh[@]}"
+fi
+if [[ "${1:-}" == "--all" ]] && ((${#lua[@]})) && need lua-language-server; then
+    lls() {
+        local tmp r
+        tmp=$(mktemp -d)
+        r="$tmp/check.json"
+        lua-language-server --check . --checklevel=Warning --check_format=json \
+            --check_out_path="$r" --logpath "$tmp" >/dev/null 2>&1
+        # Fail closed: a missing report means the check didn't run, not that it passed.
+        [[ -f "$r" ]] || { echo "no report produced at $r"; return 1; }
+        [[ "$(tr -d '[:space:]' <"$r")" =~ ^(\[\]|\{\})?$ ]] || { cat "$r"; return 1; }
+    }
+    run "lua-language-server --check" lls
+fi
+
+if ((fail)); then
+    printf '\nCommit blocked. Fix the issues above (or bypass once with: git commit --no-verify)\n'
+    exit 1
+fi
