@@ -14,13 +14,20 @@ fi
 ((${#files[@]})) || exit 0
 
 fail=0
-lua=() sh=() hypr=0
+lua=() sh=() zsh=() py=() qml=() rasi=() hypr=0
 for f in "${files[@]}"; do
     [[ -f "$f" ]] || continue
     case "$f" in
         *.lua) lua+=("$f") ;;
         *.sh) sh+=("$f") ;;
-        .githooks/*) sh+=("$f") ;;
+        *.py) py+=("$f") ;;
+        bash/dot-*) sh+=("$f") ;; # bash startup files have no shebang
+        zsh/*) zsh+=("$f") ;;     # zsh isn't supported by the bash linter
+        *.qml) qml+=("$f") ;;
+        */templates/*) ;; # matugen templates aren't valid until rendered
+        *.rasi) rasi+=("$f") ;;
+        # Extensionless scripts (~/.local/bin, hooks): detect by shebang
+        *) head -n1 "$f" | grep -qE '^#!.*\b(ba|da)?sh\b' && sh+=("$f") ;;
     esac
     [[ "$f" == hypr/* ]] && hypr=1
 done
@@ -37,6 +44,16 @@ run() { # run <label> <cmd...>
 
 need() { command -v "$1" >/dev/null || { printf '\e[33m! %s not installed, skipping\e[0m\n' "$1"; return 1; }; }
 
+if need stow; then
+    # A new file or folder in a package isn't live until it's stowed; a dry run prints LINK for each one missing.
+    stowed() {
+        local pkgs out
+        mapfile -t pkgs < <(find . -mindepth 1 -maxdepth 1 -type d ! -name '.*' -printf '%f\n')
+        out=$(stow -n -v "${pkgs[@]}" 2>&1) || { echo "$out"; return 1; }
+        ! grep -E '^(LINK|WARNING!)' <<<"$out" || { echo "run: stow -R <package>"; return 1; }
+    }
+    run "every package file is stowed" stowed
+fi
 if ((hypr)) && need Hyprland; then
     cfg=hypr/dot-config/hypr/hyprland.lua
     verify() { Hyprland --verify-config -c "$cfg" 2>&1 | grep -q '^config ok$' || { Hyprland --verify-config -c "$cfg" 2>&1 | tail -5; return 1; }; }
@@ -47,6 +64,59 @@ if ((${#lua[@]})) && need stylua; then
 fi
 if ((${#sh[@]})) && need shellcheck; then
     run "shellcheck (${#sh[@]} files)" shellcheck "${sh[@]}"
+fi
+if ((${#zsh[@]})) && need zsh; then
+    zshsyntax() {
+        local f bad=0
+        for f in "$@"; do zsh -n "$f" || bad=1; done
+        return "$bad"
+    }
+    run "zsh -n (${#zsh[@]} files)" zshsyntax "${zsh[@]}"
+fi
+if ((${#py[@]})) && need python3; then
+    # Compile to memory only: no __pycache__ written into the repo
+    pycompile() {
+        python3 -I -c 'import sys; [compile(open(f).read(), f, "exec") for f in sys.argv[1:]]' "$@"
+    }
+    run "python compile (${#py[@]} files)" pycompile "${py[@]}"
+fi
+if ((${#rasi[@]})) && need rofi; then
+    # rofi exits 0 even on a broken file; the theme parser reports "Failed to parse" on stderr
+    # for any .rasi (config.rasi included), so check that instead.
+    rasiparse() {
+        local f err bad=0
+        for f in "$@"; do
+            err=$(rofi -theme "./$f" -dump-theme 2>&1 >/dev/null)
+            if grep -q 'Failed to parse' <<<"$err"; then
+                echo "$f: $err"
+                bad=1
+            fi
+        done
+        return "$bad"
+    }
+    run "rofi .rasi parse (${#rasi[@]} files)" rasiparse "${rasi[@]}"
+fi
+# Qt 6 tools live outside PATH (/usr/bin/qmllint is the Qt 5 one)
+QT6_BIN=/usr/lib/qt6/bin
+if ((${#qml[@]})) && [[ -x $QT6_BIN/qmllint ]]; then
+    # Errors only: Quickshell registers its types and singletons at runtime, so the
+    # linter's missing-type/property warnings are noise; syntax and type errors still fail.
+    qmlerrors() {
+        local out rc
+        out=$("$QT6_BIN/qmllint" -I /usr/lib/qt6/qml "$@" 2>&1)
+        rc=$?
+        ((rc == 0)) || grep -E '\[syntax\]|^Error' <<<"$out"
+        return "$rc"
+    }
+    run "qmllint (${#qml[@]} files)" qmlerrors "${qml[@]}"
+    qmlfmt() {
+        local f bad=0
+        for f in "$@"; do
+            diff -u "$f" <("$QT6_BIN/qmlformat" "$f") || bad=1
+        done
+        ((bad == 0)) || { echo "fix with: $QT6_BIN/qmlformat -i <file>"; return 1; }
+    }
+    run "qmlformat (${#qml[@]} files)" qmlfmt "${qml[@]}"
 fi
 if [[ "${1:-}" == "--all" ]] && ((${#lua[@]})) && need lua-language-server; then
     lls() {

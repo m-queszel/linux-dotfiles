@@ -1,0 +1,123 @@
+#!/usr/bin/env bash
+# Set a wallpaper and re-theme the whole desktop from it.
+#
+#   wallpaper <image> [--light|--dark]   use this image (light/dark auto-detected unless forced)
+#   wallpaper --pick                      choose from the wallpaper folder in rofi
+#   wallpaper --random                    pick a different random one
+#
+# Colors come from matugen (~/.config/matugen/config.toml); the image is set by awww-daemon.
+set -euo pipefail
+
+WALL_DIR="${WALLPAPER_DIR:-$HOME/Pictures/Wallpapers}"
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/wallpaper"
+THUMB_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/wallpaper/thumbs"
+# Perceived lightness (CIE L*, 0-100) at or above which the theme goes light.
+LIGHT_THRESHOLD=50
+
+die() {
+    printf 'wallpaper: %s\n' "$*" >&2
+    notify-send -u critical -a wallpaper "Wallpaper" "$*" 2>/dev/null || true
+    exit 1
+}
+
+images() {
+    find "$WALL_DIR" -maxdepth 1 -type f \
+        \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' -o -iname '*.gif' \) |
+        sort
+}
+
+lightness() {
+    # [0] = first frame of animated images; alpha off so transparency doesn't count as white
+    magick "${1}[0]" -alpha off -resize 64x64! -colorspace Lab -channel R -separate \
+        -format '%[fx:mean*100]' info: | xargs printf '%.0f'
+}
+
+thumbnail() {
+    local src=$1 dst
+    dst="$THUMB_DIR/$(basename "${src%.*}").jpg"
+    if [[ ! "$dst" -nt "$src" ]]; then
+        magick "${src}[0]" -alpha off -thumbnail '480x200^' -gravity center -extent 480x200 -quality 85 "$dst"
+    fi
+    printf '%s' "$dst"
+}
+
+pick() {
+    mkdir -p "$THUMB_DIR"
+    local f choice
+    choice=$(
+        while IFS= read -r f; do
+            printf '%s\0icon\x1f%s\n' "$(basename "$f")" "$(thumbnail "$f")"
+        done < <(images) |
+            rofi -dmenu -i -p "Wallpaper" -show-icons -theme-str '
+                window { width: 1240px; border-radius: 14px; }
+                listview { columns: 3; lines: 2; flow: horizontal; spacing: 12px; }
+                element { orientation: vertical; padding: 10px; border-radius: 14px; }
+                element-icon { size: 360px; }
+                element-text { horizontal-align: 0.5; }'
+    ) || exit 0 # Escape closes the picker
+    [[ -n "$choice" ]] && printf '%s/%s' "$WALL_DIR" "$choice"
+}
+
+# GTK apps follow these (libadwaita via the portal's color-scheme); colors come from matugen's gtk.css
+set_toolkit_mode() {
+    local s=org.gnome.desktop.interface
+    if [[ $1 == dark ]]; then
+        gsettings set $s color-scheme prefer-dark
+        gsettings set $s gtk-theme adw-gtk3-dark
+        gsettings set $s icon-theme Papirus-Dark
+    else
+        gsettings set $s color-scheme prefer-light
+        gsettings set $s gtk-theme adw-gtk3
+        gsettings set $s icon-theme Papirus-Light
+    fi
+}
+
+random_image() {
+    local current
+    current=$(readlink "$STATE_DIR/current" 2>/dev/null || true)
+    images | grep -vxF -- "$current" | shuf -n 1 || true # none left: caller reports it
+}
+
+apply() {
+    local img=$1 mode=${2:-}
+    [[ -f "$img" ]] || die "not a file: $img"
+    img=$(realpath "$img")
+
+    mkdir -p "$STATE_DIR"
+    exec 9>"$STATE_DIR/lock"
+    flock -n 9 || die "already changing the wallpaper"
+
+    awww query >/dev/null 2>&1 || die "awww-daemon isn't running (systemctl --user start awww-daemon)"
+
+    if [[ -z "$mode" ]]; then
+        if (($(lightness "$img") >= LIGHT_THRESHOLD)); then mode=light; else mode=dark; fi
+    fi
+
+    awww img "$img" --transition-type wave --transition-angle 30 \
+        --transition-duration 1.2 --transition-fps 120 &
+    matugen image "$img" -m "$mode" -t scheme-tonal-spot >/dev/null || die "matugen failed for $img"
+    set_toolkit_mode "$mode"
+    wait
+
+    ln -sfn "$img" "$STATE_DIR/current"
+}
+
+mode=""
+target=""
+for arg in "$@"; do
+    case "$arg" in
+        --light) mode=light ;;
+        --dark) mode=dark ;;
+        --pick) target=$(pick) ;;
+        --random) target=$(random_image) && [[ -n "$target" ]] || die "no other wallpaper in $WALL_DIR" ;;
+        -h | --help)
+            sed -n '2,9s/^# \{0,1\}//p' "$0"
+            exit 0
+            ;;
+        -*) die "unknown option: $arg" ;;
+        *) target=$arg ;;
+    esac
+done
+
+[[ -n "$target" ]] || exit 0
+apply "$target" "$mode"

@@ -1,0 +1,47 @@
+"$schema" = "https://starship.rs/config-schema.json"
+
+# Minimal two-line prompt. Colors are the terminal's ANSI names, which kitty takes from the
+# matugen palette, so the prompt recolors with the wallpaper.
+# Only the modules listed in `format` run, which keeps the prompt fast.
+# The prompt cursor itself is drawn by ~/.config/zsh/pixel-prompt.zsh (animated pixel arrow).
+add_newline = true
+command_timeout = 200
+scan_timeout = 10
+
+format = """
+$directory$git_branch$git_state$git_status$python$cmd_duration$jobs"""
+
+[directory]
+style = "bold blue"
+truncation_length = 3
+truncate_to_repo = true
+read_only = " "
+format = "[$path]($style)[$read_only]($read_only_style) "
+
+[git_branch]
+symbol = " "
+style = "purple"
+format = "[$symbol$branch]($style) "
+
+[git_state]
+style = "yellow"
+
+[git_status]
+style = "yellow"
+format = "([$all_status$ahead_behind]($style) )"
+
+# Only shown inside an activated virtualenv
+[python]
+detect_extensions = []
+detect_files = []
+style = "green"
+format = "[$virtualenv]($style) "
+
+[cmd_duration]
+min_time = 2000
+style = "dimmed"
+format = "[took $duration]($style) "
+
+[jobs]
+style = "cyan"
+

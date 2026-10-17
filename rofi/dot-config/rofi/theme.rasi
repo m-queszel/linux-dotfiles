@@ -1,0 +1,100 @@
+/* Centered card launcher: 14px corners (same as windows and the bar), Nunito, palette from the
+ * wallpaper. Colors below are fallbacks; matugen's generated colors.rasi overrides them. */
+* {
+    surface: #2a201be6;
+    field: #3a2f29;
+    text: #f0dfd7;
+    text-dim: #d7c2b8;
+    accent: #ffb68a;
+    selected: #6b3b1e;
+    on-selected: #ffdbc8;
+    border: #52443c;
+}
+
+?import "colors.rasi"
+
+* {
+    font: "Nunito 12";
+    background-color: transparent;
+    text-color: @text;
+}
+
+window {
+    location: center;
+    anchor: center;
+    width: 640px;
+    padding: 14px;
+    border: 1px solid;
+    border-color: @border;
+    border-radius: 14px;
+    background-color: @surface;
+}
+
+mainbox {
+    spacing: 12px;
+    children: [ inputbar, message, listview ];
+}
+
+inputbar {
+    padding: 10px 14px;
+    spacing: 12px;
+    border-radius: 10px;
+    background-color: @field;
+    children: [ prompt, entry ];
+}
+
+prompt {
+    font: "0xProto Nerd Font 13";
+    text-color: @accent;
+    vertical-align: 0.5;
+}
+
+entry {
+    placeholder: "Search";
+    placeholder-color: @text-dim;
+    cursor: text;
+    vertical-align: 0.5;
+}
+
+message {
+    padding: 10px 14px;
+    border-radius: 10px;
+    background-color: @field;
+}
+
+listview {
+    lines: 8;
+    columns: 1;
+    fixed-height: true;
+    spacing: 4px;
+    scrollbar: false;
+}
+
+element {
+    padding: 8px 12px;
+    spacing: 12px;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+element normal.normal,
+element alternate.normal {
+    background-color: transparent;
+}
+
+element selected.normal {
+    background-color: @selected;
+    text-color: @on-selected;
+}
+
+element-icon {
+    size: 28px;
+    vertical-align: 0.5;
+    cursor: inherit;
+}
+
+element-text {
+    vertical-align: 0.5;
+    text-color: inherit;
+    cursor: inherit;
+}

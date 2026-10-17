@@ -1,0 +1,63 @@
+# matugen: generates every app's colors from the current wallpaper.
+# Run through `wallpaper <image>` (it also picks light/dark and sets the image).
+# Generated files live next to each app's config and are NOT tracked in git.
+
+[config]
+# Without a preference matugen 4 prompts when an image has several candidate colors,
+# and fails outright when there's no terminal (keybinds, scripts).
+prefer = "saturation"
+
+# Fixed terminal hues, harmonized toward the wallpaper so ANSI colors stay readable.
+[config.custom_colors]
+red = "#e06c75"
+green = "#98c379"
+yellow = "#e5c07b"
+blue = "#61afef"
+magenta = "#c678dd"
+cyan = "#56b6c2"
+
+[templates.hyprland]
+input_path = "~/.config/matugen/templates/hyprland-colors.lua.tmpl"
+output_path = "~/.config/hypr/colors.lua"
+
+[templates.quickshell]
+input_path = "~/.config/matugen/templates/quickshell-colors.json"
+output_path = "~/.local/state/theme/colors.json"
+# no hook: Theme.qml watches the file and animates to the new colors
+
+[templates.rofi]
+input_path = "~/.config/matugen/templates/rofi-colors.rasi"
+output_path = "~/.config/rofi/colors.rasi"
+
+[templates.kitty]
+input_path = "~/.config/matugen/templates/kitty-colors.conf"
+output_path = "~/.config/kitty/colors.conf"
+post_hook = "pkill -USR1 -x kitty || true"
+
+# GTK: the adw-gtk3 theme (GTK3) and libadwaita (GTK4) read these colors from the user gtk.css.
+# The `wallpaper` script switches light/dark (gsettings) to match.
+[templates.gtk3]
+input_path = "~/.config/matugen/templates/gtk3-colors.css"
+output_path = "~/.config/gtk-3.0/gtk.css"
+
+[templates.gtk4]
+input_path = "~/.config/matugen/templates/gtk4-colors.css"
+output_path = "~/.config/gtk-4.0/gtk.css"
+
+# Qt: the palette qt6ct applies (qt6ct.conf points at it), and the same colors as a KDE scheme
+# for KDE apps like Dolphin, which ignore the qt6ct palette.
+[templates.qt6ct]
+input_path = "~/.config/matugen/templates/qt6ct-colors.conf"
+output_path = "~/.config/qt6ct/colors/matugen.conf"
+
+[templates.qt6ct-conf]
+input_path = "~/.config/matugen/templates/qt6ct.conf.tmpl"
+output_path = "~/.config/qt6ct/qt6ct.conf"
+
+[templates.kde-colorscheme]
+input_path = "~/.config/matugen/templates/kde-colors.tmpl"
+output_path = "~/.local/share/color-schemes/Matugen.colors"
+
+[templates.hyprlock]
+input_path = "~/.config/matugen/templates/hyprlock-colors.conf"
+output_path = "~/.config/hypr/hyprlock-colors.conf"

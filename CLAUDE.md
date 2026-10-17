@@ -31,18 +31,30 @@ Personal dotfiles for an Arch Linux + Hyprland desktop, managed with GNU Stow.
 .stowrc                           --dotfiles --target=~
 install.sh                        bootstrap: hooks path + stow all packages
 ```
-- One stow package per app (`hypr/`, `kitty/`, `waybar/`, ...). Add a new app by creating
+- One stow package per app (`hypr/`, `kitty/`, `quickshell/`, ...). Add a new app by creating
   `<app>/dot-config/<app>/`, moving the config in, then `stow --adopt <app>` and `git diff` (should be empty).
-- Split large Hyprland config into `hypr/dot-config/hypr/confd/*.lua`, loaded with
+- Hyprland config is split into `hypr/dot-config/hypr/confd/*.lua`, loaded with
   `require("confd/<name>")`. Directory names must not contain dots.
-- Palette lives in one place and every app imports it; never duplicate hex values across apps.
+- **A new file or folder in a package is NOT live until `stow -R <package>`** (targets like
+  `~/.config/hypr` are real dirs, so stow links entries one by one). Add and stow new modules
+  BEFORE the entry file `require`s them, or Hyprland loads a broken config. The pre-commit hook
+  checks this ("every package file is stowed").
+- **Colors come from the wallpaper.** `wallpaper <image>` (scripts package → `~/.local/bin`) sets it
+  via awww-daemon and runs matugen (`matugen/dot-config/matugen/config.toml`), which renders
+  `templates/*` into each app's config dir (e.g. `~/.config/hypr/colors.lua`, `~/.config/kitty/colors.conf`).
+  Generated files are NOT in the repo; never hardcode hex values in app configs, add a template instead.
+  Templates that aren't valid in their language get a `.tmpl` suffix so linters skip them.
+- `.stowrc` uses `--no-folding`: target dirs are real directories with per-file links, so generated
+  files land outside the repo.
+- Hyprland reloads `require`d modules automatically when they change (including generated colors.lua).
 
 ## Engineering priorities
 
 The owner values best practices, **speed and low memory use**:
-- Prefer event-driven over polling (Hyprland event socket `.socket2.sock`, `deflisten`, waybar `signal`)
+- Prefer event-driven over polling (Hyprland event socket `.socket2.sock`, Quickshell `Hyprland.rawEvent`, custom events via `hl.dsp.event`)
   over `interval`-based scripts; never sub-second polls.
-- Prefer fewer, lighter daemons (hyprpaper over animated wallpaper daemons, mako/dunst over heavier
+- Prefer fewer, lighter daemons; Quickshell already hosts the bar and notifications, so extend it
+  rather than adding daemons (e.g. hyprpaper/awww for wallpaper, not heavier
   notification centers) unless a feature is explicitly wanted.
 - Avoid always-rendering effects (`borderangle` with `style = "loop"`); keep blur passes low.
 - Daemons start as **systemd user units** (`systemctl --user enable --now ...`), apps via `uwsm app -- <cmd>`.

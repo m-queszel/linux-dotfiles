@@ -1,8 +1,16 @@
 {
   "$schema": "https://raw.githubusercontent.com/LuaLS/vscode-lua/master/setting/schema.json",
   "runtime.version": "Lua 5.4",
-  "runtime.path": ["?.lua", "?/init.lua"],
-  "workspace.library": ["/usr/share/hypr/stubs"],
+  "runtime.path": [
+    "?.lua",
+    "?/init.lua",
+    "hypr/dot-config/hypr/?.lua"
+  ],
+  "workspace.library": [
+    "/usr/share/hypr/stubs"
+  ],
   "workspace.checkThirdParty": false,
-  "diagnostics.globals": ["hl"]
+  "diagnostics.globals": [
+    "hl"
+  ]
 }

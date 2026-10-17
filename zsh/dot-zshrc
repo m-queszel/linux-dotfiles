@@ -1,0 +1,52 @@
+# ~/.zshrc: interactive zsh. Prompt: starship + pixel-prompt animation.
+# Plugins come from the official repos (pacman), sourced directly: no plugin manager.
+
+# History, shared between open terminals
+HISTFILE=${XDG_STATE_HOME:-$HOME/.local/state}/zsh/history
+HISTSIZE=50000
+SAVEHIST=50000
+[[ -d ${HISTFILE:h} ]] || mkdir -p ${HISTFILE:h}
+setopt EXTENDED_HISTORY SHARE_HISTORY HIST_IGNORE_ALL_DUPS HIST_IGNORE_SPACE HIST_REDUCE_BLANKS
+
+setopt AUTO_CD INTERACTIVE_COMMENTS
+bindkey -e # emacs-style keys, like bash
+
+typeset -U path PATH
+path=($HOME/.local/bin $path)
+
+alias ls='ls --color=auto'
+alias grep='grep --color=auto'
+
+# Completion: menu with arrow keys, case-insensitive. The dump is rebuilt at most once a day,
+# otherwise loaded without the (slow) security check.
+autoload -Uz compinit
+() {
+    setopt local_options extended_glob
+    local dump=${XDG_CACHE_HOME:-$HOME/.cache}/zsh/zcompdump
+    [[ -d ${dump:h} ]] || mkdir -p ${dump:h}
+    if [[ ! -e $dump || -n $dump(#qN.mh+24) ]]; then
+        compinit -d $dump
+    else
+        compinit -C -d $dump
+    fi
+}
+zstyle ':completion:*' menu select
+zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
+zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
+
+# Prompt
+if (( $+commands[starship] )); then
+    eval "$(starship init zsh)"
+    source ${XDG_CONFIG_HOME:-$HOME/.config}/zsh/pixel-prompt.zsh
+fi
+
+# Ghost suggestions from history, then completions. Right arrow / End accepts.
+# fg=8 is the terminal's "bright black", i.e. the palette's outline color.
+ZSH_AUTOSUGGEST_STRATEGY=(history completion)
+ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=8'
+ZSH_AUTOSUGGEST_BUFFER_MAX_SIZE=40
+source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
+
+# Syntax highlighting must be sourced last (it wraps every widget defined before it).
+# Its default styles use ANSI color names, so they follow the wallpaper palette.
+source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh

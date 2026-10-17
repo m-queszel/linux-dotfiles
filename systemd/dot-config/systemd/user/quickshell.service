@@ -1,0 +1,16 @@
+[Unit]
+Description=Quickshell desktop shell (bar; config in ~/.config/quickshell)
+Documentation=https://quickshell.org/docs/
+PartOf=graphical-session.target
+After=graphical-session.target
+Requisite=graphical-session.target
+
+[Service]
+# Software rendering: for a few small pills it looks identical, and on Nvidia it measured
+# 74 MB private memory / 0.8% CPU vs 134 MB / 2.6% with the OpenGL renderer.
+Environment=QT_QUICK_BACKEND=software
+ExecStart=/usr/bin/qs
+Restart=on-failure
+
+[Install]
+WantedBy=graphical-session.target
