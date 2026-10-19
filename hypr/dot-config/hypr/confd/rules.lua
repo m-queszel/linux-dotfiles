@@ -1,14 +1,9 @@
--- Window, layer and workspace rules.
--- https://wiki.hypr.land/0.56.0/Configuring/Basics/Window-Rules/
-
--- Ignore maximize requests from all apps
 hl.window_rule({
     name = "suppress-maximize-events",
     match = { class = ".*" },
     suppress_event = "maximize",
 })
 
--- Fix some dragging issues with XWayland
 hl.window_rule({
     name = "fix-xwayland-drags",
     match = {
@@ -22,7 +17,6 @@ hl.window_rule({
     no_focus = true,
 })
 
--- Launcher card: frosted background, gentle pop-in
 hl.layer_rule({
     name = "rofi",
     match = { namespace = "^rofi$" },
@@ -31,7 +25,6 @@ hl.layer_rule({
     animation = "popin 94%",
 })
 
--- Notifications (Quickshell): frosted like the bar; Quickshell animates the cards itself
 hl.layer_rule({
     name = "notifications",
     match = { namespace = "^quickshell-notifications$" },

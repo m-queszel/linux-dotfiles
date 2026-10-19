@@ -1,13 +1,15 @@
-# Backups / editor noise
 *.bak
 *.orig
 *.swp
 *~
 .DS_Store
 
-# Secrets — never commit
 .ssh/
 .gnupg/
 *secret*
 *.pem
 *.key
+
+PLAN.md
+
+graphify-out/

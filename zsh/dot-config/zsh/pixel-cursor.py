@@ -1,22 +1,4 @@
 #!/usr/bin/env python3
-"""Render the animated pixel prompt cursor as kitty graphics-protocol payloads.
-
-usage: pixel-cursor.py CELL_W CELL_H COLORS_JSON OUT_DIR
-
-A gem pointer (ball, neck, collar ring, 5-faceted head) that always points right and rolls
-once around its own axis, bobs three times, then rests. It's a 3D model lit from the top-left,
-ray-marched at 3x3 samples per pixel; each pixel keeps the most common (material, tone) so the
-result is crisp pixel art with a fixed palette, never blended.
-
-Two stages, because rendering the shape is slow in pure Python but coloring is instant:
-  OUT_DIR/geometry.json   material+tone per pixel per pose. Depends only on the cell size;
-                          rendered once (tens of seconds) and reused.
-  OUT_DIR/ok.kgp, err.kgp colored animations, rebuilt whenever the wallpaper palette changes;
-  OUT_DIR/*-still.kgp      the same pointer at rest (one frame), swapped in after it has played.
-Colors all come from matugen's palette: primary (arrow), tertiary (collar), error (failed).
-The image id in the payloads is the literal "@ID@", substituted per prompt by pixel-prompt.zsh.
-"""
-
 import base64
 import colorsys
 import json
@@ -26,26 +8,23 @@ import sys
 import zlib
 from pathlib import Path
 
-CELLS = 3  # sprite width in terminal cells
-FACETS = 5  # odd, so every roll step shows a different face toward the light
-STEPS = 8  # roll poses: few on purpose, it reads as hand-made sprite frames
+CELLS = 3
+FACETS = 5
+STEPS = 8
 ROLL_MS = 110
-BOB_MS = 300
-BOB_PX = 2
-SS = 3  # supersamples per axis
-CHUNK = 4096  # max base64 bytes per escape code
+REST_MS = 2500
+BOB_PX = 1
+STRIP_STARS = 4
+SWEEP_MS = 100
+SS = 3
+CHUNK = 4096
 
-LIGHT = (-0.45, -0.7, -0.55)  # direction toward the light: up-left, toward the viewer (screen y is down)
+LIGHT = (-0.45, -0.7, -0.55)
 _ll = math.sqrt(sum(c * c for c in LIGHT))
 LX, LY, LZ = (c / _ll for c in LIGHT)
 
 
 def scene(x, y, z, faceted):
-    """Distance and material at a point in model space (arrow along +x).
-
-    faceted=False is the round cone used for the silhouette (same size at every roll angle);
-    faceted=True is the gem, used only for shading normals.
-    """
     rho = math.hypot(y, z)
     if faceted:
         sector = 2 * math.pi / FACETS
@@ -53,7 +32,6 @@ def scene(x, y, z, faceted):
         r = rho * math.cos(phi)
     else:
         r = rho
-    # capped cone along x (Inigo Quilez): base x=-0.8 radius 3.9, apex x=5.2
     h, cx, r1 = 3.0, 2.2, 3.9
     qx, qy = r, x - cx
     k2x, k2y = -r1, 2 * h
@@ -66,21 +44,20 @@ def scene(x, y, z, faceted):
     neck = max(rho - 0.85, abs(x + 1.6) - 0.9)
     if neck < d:
         d = neck
-    ring = math.hypot(rho - 1.25, x + 1.0) - 0.5  # collar torus at the gem's base
+    ring = math.hypot(rho - 1.25, x + 1.0) - 0.5
     if ring < d:
         d, m = ring, "c"
     ball = math.sqrt((x + 4.3) ** 2 + y * y + z * z) - 2.4
     if ball < d:
-        d, m = ball, ("s" if abs(z) < 0.7 else "b")  # painted stripe rolls with the ball
+        d, m = ball, ("s" if abs(z) < 0.7 else "b")
     return d, m
 
 
 def render_pose(step, w, h, px_size):
-    """Material+tone code per pixel ("h3", "b5", ...) or "" for empty."""
     ang = 2 * math.pi * step / STEPS
     ca, sa = math.cos(ang), math.sin(ang)
 
-    def at(f, x, y, z):  # world -> model: undo the roll about x
+    def at(f, x, y, z):
         return scene(x, y * ca + z * sa, -y * sa + z * ca, f)
 
     rows = []
@@ -111,9 +88,8 @@ def render_pose(step, w, h, px_size):
                     nl = math.sqrt(nx * nx + ny * ny + nz * nz) or 1.0
                     nx, ny, nz = nx / nl, ny / nl, nz / nl
                     diff = nx * LX + ny * LY + nz * LZ
-                    # reflect the light about the normal; the viewer looks along +z (from -z)
                     spec = max(0.0, LZ - 2 * diff * nz) ** 28
-                    rim = diff < 0.1 and nx * 0.6 + ny * 0.8 > 0.55  # reflected light, lower right
+                    rim = diff < 0.1 and nx * 0.6 + ny * 0.8 > 0.55
                     if spec > 0.5:
                         tone = 5
                     elif diff > 0.75:
@@ -137,7 +113,7 @@ def geometry(cell_w, cell_h, path):
     if path.exists():
         return json.loads(path.read_text())
     w, h = CELLS * cell_w, cell_h
-    px_size = 10.4 / h  # the model is ~26 px tall at the reference 12x26 cell
+    px_size = 10.4 / h
     data = {"w": w, "h": h, "poses": [render_pose(s, w, h, px_size) for s in range(STEPS)]}
     tmp = path.parent / f".{path.name}.{os.getpid()}.tmp"  # per process: shells may render at once
     tmp.write_text(json.dumps(data, separators=(",", ":")))
@@ -155,9 +131,6 @@ def mix(a, b, t):
 
 
 def ramp(rgb, shadow_hue, light_hue):
-    """Six tones, deep shadow to glint. Saturation is scaled down as tones darken: matugen
-    accents are pastels (HLS saturation ~1), and darkening those at full saturation turns them
-    into vivid red."""
     hh, ll, ss = colorsys.rgb_to_hls(*(c / 255 for c in rgb))
 
     def at(dh, s_scale, dl):
@@ -194,10 +167,9 @@ def frame_rgba(pose, pal, w, h, bob):
     out = bytearray()
     for y in range(h):
         for x in range(w):
-            sx = x - bob  # bob shifts the whole sprite right
+            sx = x - bob
             c = filled(sx, y)
             if not c:
-                # selective outline: the neighbor's color pushed toward the ink
                 n = filled(sx, y - 1) or filled(sx - 1, y) or filled(sx + 1, y) or filled(sx, y + 1)
                 c = mix(n, pal["ink"], 0.78) if n else None
             out += bytes((*c, 255)) if c else b"\0\0\0\0"
@@ -205,7 +177,6 @@ def frame_rgba(pose, pal, w, h, bob):
 
 
 def escape(keys, data=b""):
-    """Graphics escape(s) for keys + optional pixel data, zlib-compressed and chunked."""
     if not data:
         return f"\x1b_G{keys}\x1b\\"
     b64 = base64.standard_b64encode(zlib.compress(data, 9)).decode()
@@ -218,44 +189,75 @@ def escape(keys, data=b""):
     return "".join(seqs)
 
 
-def payload(geo, pal):
-    w, h, poses = geo["w"], geo["h"], geo["poses"]
-    frames = [(poses[k % STEPS], 0, ROLL_MS) for k in range(1, STEPS + 1)]
-    frames += [(poses[0], bob, BOB_MS) for bob in (BOB_PX, 0, BOB_PX, 0, BOB_PX, 0)]
-    frames.append((poses[0], 0, BOB_MS))  # rests here when the animation ends
+def animation(frames, w, h, cols, rows=1):
     size = f"f=32,s={w},v={h}"
     seqs = []
-    for n, (pose, bob, gap) in enumerate(frames):
-        data = frame_rgba(pose, pal, w, h, bob)
+    for n, (data, gap) in enumerate(frames):
         if n == 0:
             seqs.append(escape(f"a=t,q=2,i=@ID@,{size}", data))
-            seqs.append(escape(f"a=p,q=2,U=1,i=@ID@,c={CELLS},r=1"))
+            seqs.append(escape(f"a=p,q=2,U=1,i=@ID@,c={cols},r={rows}"))
             seqs.append(escape(f"a=a,q=2,i=@ID@,r=1,z={gap}"))
         else:
             seqs.append(escape(f"a=f,q=2,i=@ID@,{size},z={gap}", data))
-    seqs.append(escape("a=a,q=2,i=@ID@,s=3,v=2"))  # v=2: play the frames once, then stop
+    seqs.append(escape("a=a,q=2,i=@ID@,s=3,v=1"))
     return "".join(seqs)
 
 
-def still(geo, pal):
-    """The resting pointer as a one-frame image. Sent over a finished prompt's id, it replaces
-    that prompt's 16-frame animation, so kitty doesn't keep every prompt's frames."""
-    w, h = geo["w"], geo["h"]
-    data = frame_rgba(geo["poses"][0], pal, w, h, 0)
-    return escape(f"a=t,q=2,i=@ID@,f=32,s={w},v={h}", data) + escape(f"a=p,q=2,U=1,i=@ID@,c={CELLS},r=1")
+def still(data, w, h, cols, rows=1):
+    return escape(f"a=t,q=2,i=@ID@,f=32,s={w},v={h}", data) + escape(f"a=p,q=2,U=1,i=@ID@,c={cols},r={rows}")
+
+
+def gem_frames(geo, pal):
+    w, h, poses = geo["w"], geo["h"], geo["poses"]
+    frames = [(poses[k % STEPS], BOB_PX if 3 <= k <= 6 else 0, ROLL_MS) for k in range(1, STEPS + 1)]
+    frames[-1] = (poses[0], 0, REST_MS)
+    return [(frame_rgba(pose, pal, w, h, bob), gap) for pose, bob, gap in frames]
+
+
+def strip_frames(cell_w, cell_h, dim, star, peak, bg):
+    w, h, cy = (STRIP_STARS + 1) * cell_w, cell_h, cell_h // 2
+    sweep = 12
+    rest = (STEPS - 1) * ROLL_MS + REST_MS - sweep * SWEEP_MS
+    frames = []
+    for f in range(sweep + 1):
+        px = {}
+        for k in range(STRIP_STARS):
+            x, d = k * cell_w + cell_w // 2, abs(f - (2 + 2 * k)) if f < sweep else 9
+            if d == 0:
+                px[x, cy] = peak
+                for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                    px[x + dx, cy + dy] = star
+            else:
+                px[x, cy] = star if d == 1 else dim
+        d = abs(f - 10) if f < sweep else 9
+        arm = 3 if d == 0 else 2 if d == 1 else 1
+        x = STRIP_STARS * cell_w + cell_w // 2
+        px[x, cy] = peak if arm >= 2 else star
+        for i in range(1, arm + 1):
+            c = mix(star, bg, 0.35) if i == arm and arm > 1 else star
+            for dx, dy in ((i, 0), (-i, 0), (0, i), (0, -i)):
+                px[x + dx, cy + dy] = c
+        data = bytearray(w * h * 4)
+        for (x, y), c in px.items():
+            data[(y * w + x) * 4 : (y * w + x) * 4 + 4] = bytes((*c, 255))
+        frames.append((bytes(data), SWEEP_MS if f < sweep else rest))
+    return frames
 
 
 def self_check():
-    # The silhouette must not change while rolling (the even-arrowhead fix)
     a = render_pose(0, 12, 13, 0.8)
     b = render_pose(1, 12, 13, 0.8)
     assert [[bool(c) for c in r] for r in a] == [[bool(c) for c in r] for r in b], "silhouette changes"
     assert ramp((255, 182, 138), -8, 8)[3] == (255, 182, 138), "base tone must be the accent itself"
-    # Lit from the top-left: the upper half of the head must be brighter than the lower half
     pose = render_pose(0, 36, 26, 0.4)
     tones = lambda rows: [int(c[1]) for r in rows for c in r if c.startswith("h")]
     top, bottom = tones(pose[:13]), tones(pose[13:])
     assert sum(top) / len(top) > sum(bottom) / len(bottom), "light comes from below"
+    gem = gem_frames({"w": 12, "h": 13, "poses": [a] * STEPS}, palette((255, 182, 138), (203, 201, 146)))
+    p = animation(gem, 12, 13, CELLS)
+    assert p.count("a=f,") == STEPS - 1 and "v=1" in p and f"z={REST_MS}" in p, "idle loop"
+    strip = strip_frames(12, 26, (1, 1, 1), (2, 2, 2), (3, 3, 3), (0, 0, 0))
+    assert sum(g for _, g in strip) == sum(g for _, g in gem), "strip out of step with the gem"
     print("ok")
 
 
@@ -268,14 +270,27 @@ def main():
     except (OSError, ValueError):
         colors = {}
     out_dir.mkdir(parents=True, exist_ok=True)
+
+    def color(key, fallback):
+        return hex_rgb(colors.get(key, fallback))
+
+    def write(file, text):
+        tmp = out_dir / f".{file}.{os.getpid()}.tmp"
+        tmp.write_text(text)
+        tmp.replace(out_dir / file)
+
+    dim, star = color("outline_variant", "#52443c"), color("tertiary", "#cbc992")
+    strip = strip_frames(cell_w, cell_h, dim, star, color("on_surface", "#f0dfd7"), color("surface", "#1a120d"))
+    sw = (STRIP_STARS + 1) * cell_w
+    write("strip.kgp", animation(strip, sw, cell_h, STRIP_STARS + 1))
+    write("strip-still.kgp", still(strip[-1][0], sw, cell_h, STRIP_STARS + 1))
+    write("dim", "%d;%d;%d" % dim)
     geo = geometry(cell_w, cell_h, out_dir / "geometry.json")
-    collar = hex_rgb(colors.get("tertiary", "#cbc992"))
-    for name, key, fallback in (("ok", "primary", "#ffb68a"), ("err", "error", "#ffb4ab")):
-        pal = palette(hex_rgb(colors.get(key, fallback)), collar)
-        for file, text in ((f"{name}.kgp", payload(geo, pal)), (f"{name}-still.kgp", still(geo, pal))):
-            tmp = out_dir / f".{file}.{os.getpid()}.tmp"
-            tmp.write_text(text)
-            tmp.replace(out_dir / file)  # atomic: a prompt never reads half a file
+    w, h = geo["w"], geo["h"]
+    for name, key, fallback in (("ok", "primary", "#ffb68a"), ("err", "error", "#ffb4ab")):  # err-still written last
+        pal = palette(color(key, fallback), star)
+        write(f"{name}.kgp", animation(gem_frames(geo, pal), w, h, CELLS))
+        write(f"{name}-still.kgp", still(frame_rgba(geo["poses"][0], pal, w, h, 0), w, h, CELLS))
 
 
 if __name__ == "__main__":

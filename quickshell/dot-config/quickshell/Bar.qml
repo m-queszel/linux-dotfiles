@@ -4,10 +4,6 @@ import Quickshell.Hyprland
 import Quickshell.Io
 import Quickshell.Wayland
 
-// Two floating pills (workspaces left, status right), hidden until SUPER is held.
-// Hyprland drives visibility with custom socket events (~/.config/hypr/confd/bar.lua):
-//   bar:peek:1 / bar:peek:0   SUPER pressed / released
-//   bar:pin:1  / bar:pin:0    SUPER+SHIFT+B (stays shown, still floating over windows)
 Scope {
     id: root
 
@@ -30,7 +26,6 @@ Scope {
         }
     }
 
-    // Pinned state survives restarts in the same file the Hyprland side writes.
     FileView {
         path: Theme.stateDir + "/bar-pinned"
         printErrors: false
@@ -53,11 +48,10 @@ Scope {
             }
             implicitHeight: Theme.gapsOut + Theme.pillHeight
             color: "transparent"
-            exclusionMode: ExclusionMode.Ignore // always floats over windows, pinned or not
+            exclusionMode: ExclusionMode.Ignore
             WlrLayershell.layer: WlrLayer.Top
             WlrLayershell.namespace: "quickshell-bar"
 
-            // Only the pills take clicks, and only while shown: hidden, everything passes through.
             mask: Region {
                 Region {
                     item: root.shown ? leftPill : null

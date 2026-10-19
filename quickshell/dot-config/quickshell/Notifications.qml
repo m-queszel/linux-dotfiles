@@ -3,8 +3,6 @@ import Quickshell
 import Quickshell.Services.Notifications
 import Quickshell.Wayland
 
-// Notification server + popups (replaces mako). Cards stack top-right, newest on top, at most
-// three visible; each shows a countdown bar that pauses on hover, and closes with its X button.
 Scope {
     id: root
 
@@ -13,14 +11,14 @@ Scope {
         keepOnReload: true
         actionsSupported: true
         imageSupported: true
-        bodyMarkupSupported: false // plain text: no app can inject styling or links into cards
+        bodyMarkupSupported: false // plain text: apps can't inject styling or links
         onNotification: n => n.tracked = true
     }
 
     PanelWindow {
         id: panel
 
-        // From the server, not list.count: a ListView in a hidden window never fills, so it'd stay 0
+        // From the server, not list.count: a ListView in a hidden window never fills
         visible: server.trackedNotifications.values.length > 0
         anchors {
             top: true
@@ -30,14 +28,13 @@ Scope {
             top: Theme.gapsOut
             right: Theme.gapsOut
         }
-        implicitWidth: 360 + 16 // + room on the left for the entry spring's overshoot
+        implicitWidth: 360 + 16
         implicitHeight: Math.max(1, list.contentHeight)
         color: "transparent"
         exclusionMode: ExclusionMode.Ignore
         WlrLayershell.layer: WlrLayer.Overlay
         WlrLayershell.namespace: "quickshell-notifications"
 
-        // Only the cards take clicks
         mask: Region {
             item: list
         }
@@ -49,7 +46,7 @@ Scope {
             height: contentHeight
             interactive: false
             spacing: Theme.gapsIn
-            verticalLayoutDirection: ListView.BottomToTop // newest (last) on top
+            verticalLayoutDirection: ListView.BottomToTop
             model: server.trackedNotifications
 
             delegate: NotificationCard {
@@ -60,8 +57,6 @@ Scope {
                 shown: index >= list.count - 3
             }
 
-            // Cards animate their own entry/exit (NotificationCard); the rest of the stack glides
-            // into place on the bar's spring
             displaced: Transition {
                 SpringAnimation {
                     property: "y"

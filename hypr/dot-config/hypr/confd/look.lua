@@ -1,9 +1,3 @@
--- Gaps, borders, rounding, blur, animations and layouts.
--- Rice-wide rules: 14px corners everywhere (Quickshell bar + notifications, rofi and hyprlock match), 6/12 gaps,
--- 2px accent border, light blur, gentle springs, nothing that animates while idle.
--- https://wiki.hypr.land/0.56.0/Configuring/Basics/Variables/
-
--- Palette generated from the wallpaper by matugen (`wallpaper <image>`); fallback until it has run.
 local ok, colors = pcall(require, "colors")
 if not ok then
     colors = { primary = "b86b4f", outline_variant = "4f4539", shadow = "000000", surface = "1a120d" }
@@ -29,7 +23,7 @@ hl.config({
 
     decoration = {
         rounding = 14,
-        rounding_power = 2, -- plain circular corners, identical to CSS border-radius elsewhere
+        rounding_power = 2,
         active_opacity = 1.0,
         inactive_opacity = 1.0,
         shadow = {
@@ -70,14 +64,11 @@ hl.config({
         force_default_wallpaper = 0,
         disable_hyprland_logo = true,
         disable_splash_rendering = true,
-        -- Shown for a moment at login before awww-daemon draws the wallpaper
         background_color = "rgb(" .. colors.surface .. ")",
     },
 })
 
--- https://wiki.hypr.land/0.56.0/Configuring/Advanced-and-Cool/Animations/
--- Speeds are in tenths of a second for bezier curves (3 = 300ms).
-hl.curve("gentle", { type = "spring", mass = 1, stiffness = 200, dampening = 24 }) -- slightly under-damped: a soft settle
+hl.curve("gentle", { type = "spring", mass = 1, stiffness = 200, dampening = 24 })
 hl.curve("easeOutQuint", { type = "bezier", points = { { 0.23, 1 }, { 0.32, 1 } } })
 hl.curve("quick", { type = "bezier", points = { { 0.15, 0 }, { 0.1, 1 } } })
 

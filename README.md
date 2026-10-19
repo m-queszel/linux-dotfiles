@@ -8,7 +8,7 @@ Managed with [GNU Stow](https://www.gnu.org/software/stow/).
 | Compositor | Hyprland 0.56 (Lua config), uwsm session |
 | Shell UI | Quickshell: auto-hiding bar, notifications |
 | Launcher | rofi 2.0 |
-| Terminal | kitty, zsh, starship, animated pixel prompt |
+| Terminal | kitty, zsh, starship (colors from matugen), animated pixel prompt + starlit strip, armillary-sphere title screen with programming quotes (`quotes-update`); recolors live on wallpaper change (`pixel-art-refresh`); `ls` and completion colors from the theme (`ls-colors` template) |
 | Theming | matugen from the wallpaper (awww): Hyprland, apps, GTK, Qt, lock screen |
 | Lock / idle | hyprlock, hypridle (lock 15 min, screen off 16 min) |
 

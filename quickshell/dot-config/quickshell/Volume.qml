@@ -1,7 +1,6 @@
 import QtQuick
 import Quickshell.Services.Pipewire
 
-// Default output volume. Click toggles mute, scroll changes volume by 5%.
 RevealItem {
     id: root
 

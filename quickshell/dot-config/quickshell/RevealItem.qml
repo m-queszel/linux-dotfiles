@@ -1,6 +1,5 @@
 import QtQuick
 
-// A leader (icon or text) whose value slides out next to it on hover.
 Item {
     id: root
 
@@ -8,11 +7,11 @@ Item {
     property bool leaderIsIcon: true
     property bool leaderBold: false
     property string value
-    property bool revealLeft: false // value slides out to the left of the leader
+    property bool revealLeft: false
     property color leaderColor: hover.hovered && leaderIsIcon ? Theme.primary : Theme.onSurfaceVariant
 
     signal clicked
-    signal scrolled(int steps) // positive = up
+    signal scrolled(int steps)
 
     implicitWidth: row.implicitWidth
     implicitHeight: Theme.pillHeight
@@ -37,7 +36,6 @@ Item {
             }
         }
 
-        // Clipped slot whose width animates from 0, so the value slides out instead of popping.
         Item {
             anchors.verticalCenter: parent.verticalCenter
             clip: true

@@ -1,5 +1,4 @@
-/* Centered card launcher: 14px corners (same as windows and the bar), Nunito, palette from the
- * wallpaper. Colors below are fallbacks; matugen's generated colors.rasi overrides them. */
+/* Fallback colors only; matugen's generated colors.rasi overrides them. */
 * {
     surface: #2a201be6;
     field: #3a2f29;

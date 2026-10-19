@@ -3,8 +3,6 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell.Hyprland
 
-// Workspace dots: always 1-5, plus any higher workspace that exists. The active dot stretches
-// with a spring; occupied ones are darker. Click to switch (Lua dispatch syntax).
 Row {
     id: root
 

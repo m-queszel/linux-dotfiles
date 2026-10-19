@@ -11,7 +11,6 @@ set -euo pipefail
 WALL_DIR="${WALLPAPER_DIR:-$HOME/Pictures/Wallpapers}"
 STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/wallpaper"
 THUMB_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/wallpaper/thumbs"
-# Perceived lightness (CIE L*, 0-100) at or above which the theme goes light.
 LIGHT_THRESHOLD=50
 
 die() {
@@ -27,7 +26,6 @@ images() {
 }
 
 lightness() {
-    # [0] = first frame of animated images; alpha off so transparency doesn't count as white
     magick "${1}[0]" -alpha off -resize 64x64! -colorspace Lab -channel R -separate \
         -format '%[fx:mean*100]' info: | xargs printf '%.0f'
 }
@@ -54,11 +52,10 @@ pick() {
                 element { orientation: vertical; padding: 10px; border-radius: 14px; }
                 element-icon { size: 360px; }
                 element-text { horizontal-align: 0.5; }'
-    ) || exit 0 # Escape closes the picker
+    ) || exit 0
     [[ -n "$choice" ]] && printf '%s/%s' "$WALL_DIR" "$choice"
 }
 
-# GTK apps follow these (libadwaita via the portal's color-scheme); colors come from matugen's gtk.css
 set_toolkit_mode() {
     local s=org.gnome.desktop.interface
     if [[ $1 == dark ]]; then
@@ -75,7 +72,7 @@ set_toolkit_mode() {
 random_image() {
     local current
     current=$(readlink "$STATE_DIR/current" 2>/dev/null || true)
-    images | grep -vxF -- "$current" | shuf -n 1 || true # none left: caller reports it
+    images | grep -vxF -- "$current" | shuf -n 1 || true
 }
 
 apply() {

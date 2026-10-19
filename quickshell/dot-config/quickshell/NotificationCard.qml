@@ -3,8 +3,6 @@ import Quickshell
 import Quickshell.Services.Notifications
 import Quickshell.Widgets
 
-// One notification: icon, app, title, body, X to close, and a countdown bar along the bottom
-// that pauses while hovered. Critical notifications have no countdown and stay until closed.
 Rectangle {
     id: card
 
@@ -13,12 +11,10 @@ Rectangle {
 
     // The server destroys a notification just before its card is removed, so reads are null-safe
     readonly property bool critical: notification?.urgency === NotificationUrgency.Critical
-    // Apps may request a timeout (expireTimeout is in ms); otherwise 3 s for low, 5 s for normal
     readonly property int timeoutMs: notification?.expireTimeout > 0 ? notification?.expireTimeout : notification?.urgency === NotificationUrgency.Low ? 3000 : 5000
     readonly property var defaultAction: notification?.actions.find(a => a.identifier === "default") ?? null
 
-    // Slide in/out on the same spring as the bar pills. Closing animates out first and only then
-    // tells the server, so the exit always plays (the server drops the card the moment it's closed).
+    // Animate out before telling the server: it drops the card the moment it's closed
     property real offset: 380
     property bool leaving: false
     property string closeWith: "dismiss"
@@ -37,7 +33,7 @@ Rectangle {
         entered = true;
     }
     x: offset
-    opacity: entered && !leaving ? 1 : 0 // starts invisible: no flash at the final spot
+    opacity: entered && !leaving ? 1 : 0
 
     Behavior on offset {
         enabled: !card.leaving
@@ -75,7 +71,6 @@ Rectangle {
         id: hover
     }
 
-    // Clicking the card opens the app (if it offered that); the X only closes
     MouseArea {
         anchors.fill: parent
         enabled: card.defaultAction !== null
@@ -90,7 +85,7 @@ Rectangle {
         id: content
         x: 14
         y: 14
-        width: parent.width - 28 - 28 // room for the X button
+        width: parent.width - 28 - 28
         spacing: 12
 
         IconImage {
@@ -139,7 +134,6 @@ Rectangle {
         }
     }
 
-    // Close button
     Rectangle {
         anchors.top: parent.top
         anchors.right: parent.right
@@ -157,7 +151,7 @@ Rectangle {
 
         Text {
             anchors.centerIn: parent
-            text: "\u{f0156}" // nf-md-close
+            text: "\u{f0156}"
             color: closeMouse.containsMouse ? Theme.onSurface : Theme.onSurfaceVariant
             font.family: Theme.iconFont
             font.pixelSize: 14
@@ -175,7 +169,6 @@ Rectangle {
         Accessible.name: "Close notification"
     }
 
-    // Countdown: shrinks to nothing, then the notification expires. Hovering pauses it.
     Rectangle {
         id: countdown
         visible: !card.critical
@@ -190,7 +183,7 @@ Rectangle {
 
         NumberAnimation on progress {
             running: !card.critical
-            paused: hover.hovered || !card.shown // hidden cards wait their turn instead of expiring unseen
+            paused: hover.hovered || !card.shown
             from: 1
             to: 0
             duration: card.timeoutMs

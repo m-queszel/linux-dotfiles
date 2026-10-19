@@ -1,7 +1,6 @@
 import QtQuick
 import Quickshell
 
-// 12-hour clock; the full date slides out to its left on hover.
 RevealItem {
     leader: Qt.formatTime(clock.date, "h:mm AP")
     leaderIsIcon: false

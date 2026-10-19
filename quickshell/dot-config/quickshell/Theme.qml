@@ -4,9 +4,6 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 
-// Design tokens for the whole shell. Sizes mirror ~/.config/hypr/confd/look.lua.
-// Colors are generated from the wallpaper by matugen (`wallpaper <image>`) into
-// $XDG_STATE_HOME/theme/colors.json and reload live; the fallbacks cover a fresh install.
 Singleton {
     id: root
 
