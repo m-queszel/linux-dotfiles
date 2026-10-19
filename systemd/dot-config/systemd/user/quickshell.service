@@ -6,8 +6,7 @@ After=graphical-session.target
 Requisite=graphical-session.target
 
 [Service]
-# Software rendering: for a few small pills it looks identical, and on Nvidia it measured
-# 74 MB private memory / 0.8% CPU vs 134 MB / 2.6% with the OpenGL renderer.
+# Software rendering: about half the memory and CPU of the OpenGL renderer on Nvidia.
 Environment=QT_QUICK_BACKEND=software
 ExecStart=/usr/bin/qs
 Restart=on-failure

@@ -1,14 +1,13 @@
 import QtQuick
 import Quickshell.Io
 
-// CPU and memory use from /proc. Only samples while `active` (the bar is visible).
 RevealItem {
     id: root
 
     property bool active: false
     property int cpu: 0
     property real memGiB: 0
-    property var lastCpu: null // [idle, total] from the previous sample
+    property var lastCpu: null
 
     leader: "󰍛"
     value: `cpu ${cpu}%  ·  mem ${memGiB.toFixed(1)}G`

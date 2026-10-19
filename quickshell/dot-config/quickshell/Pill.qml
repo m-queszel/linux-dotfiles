@@ -1,7 +1,5 @@
 import QtQuick
 
-// A rounded pill that slides down from above the screen edge when `shown`.
-// Children are laid out in a row; the pill grows smoothly as they do.
 Rectangle {
     id: root
 
@@ -14,12 +12,10 @@ Rectangle {
     radius: Theme.radius
     color: Theme.pill
 
-    // Hidden just above the screen edge, so the slide is short and the peek feels instant
     y: shown ? Theme.gapsOut : -height
     opacity: shown ? 1 : 0
 
     Behavior on y {
-        // Like the "gentle" window spring in look.lua: fast start, soft settle
         SpringAnimation {
             spring: 6
             damping: 0.38

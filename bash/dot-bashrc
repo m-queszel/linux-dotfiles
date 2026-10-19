@@ -1,14 +1,12 @@
 # shellcheck shell=bash
-#
-# ~/.bashrc
-#
-
-# If not running interactively, don't do anything
 [[ $- != *i* ]] && return
 
 alias ls='ls --color=auto'
 alias grep='grep --color=auto'
+if [[ -r ${XDG_CONFIG_HOME:-$HOME/.config}/ls-colors ]]; then
+    LS_COLORS=$(<"${XDG_CONFIG_HOME:-$HOME/.config}/ls-colors")
+    export LS_COLORS
+fi
 PS1='[\u@\h \W]\$ '
 
-# Prompt: starship (~/.config/starship.toml); keeps the plain PS1 above if it isn't installed
 command -v starship >/dev/null && eval "$(starship init bash)"

@@ -1,3 +1,1 @@
-# Environment for the Hyprland session only, loaded by uwsm at login (re-login to apply).
-# Capitaine ships no hyprcursor build, so Hyprland falls back to XCURSOR_THEME
 export HYPRCURSOR_SIZE=24

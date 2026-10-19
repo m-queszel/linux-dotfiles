@@ -1,10 +1,8 @@
-/* rofi 2.0 (native Wayland). SUPER+Space toggles the app launcher. */
 configuration {
     modes: "drun,run,window";
     show-icons: true;
     icon-theme: "Papirus-Dark";
     terminal: "kitty";
-    /* Launch apps in their own systemd scope under the uwsm session */
     run-command: "uwsm app -- {cmd}";
     drun-display-format: "{name}";
     display-drun: "󰍉";
