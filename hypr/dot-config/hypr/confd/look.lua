@@ -8,10 +8,6 @@ if not ok then
     }
 end
 
-local function rgba(hex, alpha)
-    return string.format("rgba(%s%02x)", hex, math.floor(alpha * 255 + 0.5))
-end
-
 hl.config({
     general = {
         gaps_in = 6,
@@ -27,6 +23,8 @@ hl.config({
         rounding_power = 2,
         active_opacity = 1.0,
         inactive_opacity = 1.0,
+        dim_inactive = true,
+        dim_strength = 0.06,
         shadow = {
             enabled = true,
             sharp = true,
@@ -66,52 +64,38 @@ hl.config({
     },
 })
 
-local function setEdges(alpha)
-    hl.config({
-        general = {
-            col = {
-                active_border = rgba(colors.primary, alpha),
-                inactive_border = rgba(colors.outline_variant, alpha),
-            },
+hl.config({
+    general = {
+        col = {
+            active_border = "rgb(" .. colors.primary .. ")",
+            inactive_border = "rgb(" .. colors.outline_variant .. ")",
         },
-        decoration = {
-            shadow = {
-                color = rgba(colors.tertiary, alpha),
-                color_inactive = rgba(colors.tertiary, alpha),
-            },
+    },
+    decoration = {
+        shadow = {
+            color = "rgb(" .. colors.tertiary .. ")",
+            color_inactive = "rgb(" .. colors.tertiary .. ")",
         },
-    })
-end
-
-setEdges(1)
-
-local SLIDE_MS = 300
-local switches = 0
-
-hl.on("workspace.active", function()
-    switches = switches + 1
-    local this = switches
-    setEdges(0)
-    hl.timer(function()
-        if this == switches then
-            setEdges(1)
-        end
-    end, { timeout = SLIDE_MS, type = "oneshot" })
-end)
+    },
+})
 
 hl.curve("gentle", { type = "spring", mass = 1, stiffness = 200, dampening = 24 })
 hl.curve("easeOutQuint", { type = "bezier", points = { { 0.23, 1 }, { 0.32, 1 } } })
 hl.curve("quick", { type = "bezier", points = { { 0.15, 0 }, { 0.1, 1 } } })
+hl.curve("emphasizedDecel", { type = "bezier", points = { { 0.05, 0.7 }, { 0.1, 1 } } })
+hl.curve("emphasizedAccel", { type = "bezier", points = { { 0.3, 0 }, { 0.8, 0.15 } } })
 
 hl.animation({ leaf = "global", enabled = true, speed = 6, bezier = "default" })
-hl.animation({ leaf = "border", enabled = false })
+hl.animation({ leaf = "border", enabled = true, speed = 4, bezier = "emphasizedDecel" })
+hl.animation({ leaf = "fadeShadow", enabled = true, speed = 4, bezier = "emphasizedDecel" })
+hl.animation({ leaf = "fadeDim", enabled = true, speed = 4, bezier = "emphasizedDecel" })
 hl.animation({ leaf = "windows", enabled = true, speed = 4, spring = "gentle" })
 hl.animation({ leaf = "windowsIn", enabled = true, speed = 4, spring = "gentle", style = "popin 90%" })
-hl.animation({ leaf = "windowsOut", enabled = true, speed = 1.5, bezier = "easeOutQuint", style = "popin 90%" })
+hl.animation({ leaf = "windowsOut", enabled = true, speed = 2, bezier = "emphasizedAccel", style = "popin 95%" })
 hl.animation({ leaf = "windowsMove", enabled = true, speed = 4, spring = "gentle" })
 hl.animation({ leaf = "fade", enabled = true, speed = 2.5, bezier = "quick" })
-hl.animation({ leaf = "layersIn", enabled = true, speed = 3, bezier = "easeOutQuint", style = "fade" })
-hl.animation({ leaf = "layersOut", enabled = true, speed = 1.5, bezier = "easeOutQuint", style = "fade" })
+hl.animation({ leaf = "layersIn", enabled = true, speed = 4, bezier = "emphasizedDecel", style = "fade" })
+hl.animation({ leaf = "layersOut", enabled = true, speed = 2, bezier = "emphasizedAccel", style = "fade" })
 hl.animation({ leaf = "workspaces", enabled = true, speed = 3, bezier = "easeOutQuint", style = "slidefade 15%" })
 hl.animation({
     leaf = "specialWorkspace",

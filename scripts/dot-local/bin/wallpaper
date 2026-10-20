@@ -30,6 +30,14 @@ lightness() {
         -format '%[fx:mean*100]' info: | xargs printf '%.0f'
 }
 
+# Cursor as awww's fractional transition-pos (y counts up from the bottom); "center" outside Hyprland.
+cursor_pos() {
+    hyprctl -j cursorpos 2>/dev/null | jq -er --argjson mons "$(hyprctl -j monitors 2>/dev/null)" '
+        def frac: if . < 0.001 then 0.001 elif . > 0.999 then 0.999 else . end | tostring;
+        . as $c | $mons[] | select(.focused) | (.width / .scale) as $w | (.height / .scale) as $h |
+        "\(($c.x - .x) / $w | frac),\(1 - ($c.y - .y) / $h | frac)"' 2>/dev/null || echo center
+}
+
 thumbnail() {
     local src=$1 dst
     dst="$THUMB_DIR/$(basename "${src%.*}").jpg"
@@ -90,8 +98,8 @@ apply() {
         if (($(lightness "$img") >= LIGHT_THRESHOLD)); then mode=light; else mode=dark; fi
     fi
 
-    awww img "$img" --transition-type wave --transition-angle 30 \
-        --transition-duration 1.2 --transition-fps 120 &
+    awww img "$img" --transition-type grow --transition-pos "$(cursor_pos)" \
+        --transition-bezier .05,.7,.1,1 --transition-duration 1.2 --transition-fps 240 &
     matugen image "$img" -m "$mode" -t scheme-tonal-spot >/dev/null || die "matugen failed for $img"
     set_toolkit_mode "$mode"
     wait

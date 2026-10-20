@@ -11,6 +11,15 @@ PanelWindow {
     property real left: 0
     property alias spacing: body.spacing
     default property alias content: body.data
+    property real reveal: open ? 1 : 0
+
+    Behavior on reveal {
+        NumberAnimation {
+            duration: root.open ? Theme.enterMs : Theme.exitMs
+            easing.type: Easing.BezierSpline
+            easing.bezierCurve: root.open ? Theme.enterCurve : Theme.exitCurve
+        }
+    }
 
     anchors {
         top: true
@@ -23,16 +32,19 @@ PanelWindow {
     implicitWidth: cardWidth + Theme.shadowOffset
     implicitHeight: card.height + Theme.shadowOffset
     color: "transparent"
-    visible: open
+    visible: reveal > 0
     exclusionMode: ExclusionMode.Ignore
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "quickshell-dropdown"
-    WlrLayershell.keyboardFocus: interactive && open ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+    // OnDemand, not Exclusive: Hyprland sends every click to exclusive layers, which starves the click-away catcher
+    WlrLayershell.keyboardFocus: interactive && open ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
 
     Card {
         id: card
 
         attached: true
+        // Slides out from under the bar; the window edge clips it
+        y: -(height + Theme.shadowOffset) * (1 - root.reveal)
         width: root.cardWidth
         height: body.implicitHeight + 28
         focus: true

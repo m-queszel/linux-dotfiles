@@ -45,7 +45,9 @@ Card {
     }
     Behavior on opacity {
         NumberAnimation {
-            duration: 220
+            duration: card.leaving ? Theme.exitMs : Theme.enterMs
+            easing.type: Easing.BezierSpline
+            easing.bezierCurve: card.leaving ? Theme.exitCurve : Theme.enterCurve
         }
     }
 
@@ -54,8 +56,9 @@ Card {
         target: card
         property: "offset"
         to: 400
-        duration: 260
-        easing.type: Easing.InCubic
+        duration: Theme.exitMs
+        easing.type: Easing.BezierSpline
+        easing.bezierCurve: Theme.exitCurve
         onFinished: card.closeWith === "expire" ? card.notification?.expire() : card.notification?.dismiss()
     }
 
