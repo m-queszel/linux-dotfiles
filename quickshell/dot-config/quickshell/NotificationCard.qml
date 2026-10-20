@@ -3,7 +3,7 @@ import Quickshell
 import Quickshell.Services.Notifications
 import Quickshell.Widgets
 
-Rectangle {
+Card {
     id: card
 
     required property var notification
@@ -61,11 +61,7 @@ Rectangle {
 
     visible: shown
     height: shown ? content.implicitHeight + 28 : 0
-    radius: Theme.radius
-    color: Theme.pill
-    border.width: 1
-    border.color: critical ? Theme.error : Theme.outlineVariant
-    clip: true
+    edge: critical ? Theme.error : Theme.primary
 
     HoverHandler {
         id: hover
@@ -108,6 +104,8 @@ Rectangle {
                 color: Theme.onSurfaceVariant
                 font.family: Theme.font
                 font.pixelSize: 11
+                font.capitalization: Font.AllUppercase
+                font.letterSpacing: 1
                 elide: Text.ElideRight
             }
             Text {
@@ -134,39 +132,14 @@ Rectangle {
         }
     }
 
-    Rectangle {
+    Key {
         anchors.top: parent.top
         anchors.right: parent.right
         anchors.margins: 8
-        width: 26
-        height: 26
-        radius: 13
-        color: closeMouse.containsMouse ? Qt.alpha(Theme.onSurface, 0.12) : "transparent"
-
-        Behavior on color {
-            ColorAnimation {
-                duration: 150
-            }
-        }
-
-        Text {
-            anchors.centerIn: parent
-            text: "\u{f0156}"
-            color: closeMouse.containsMouse ? Theme.onSurface : Theme.onSurfaceVariant
-            font.family: Theme.iconFont
-            font.pixelSize: 14
-        }
-
-        MouseArea {
-            id: closeMouse
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: card.leave("dismiss")
-        }
-
-        Accessible.role: Accessible.Button
-        Accessible.name: "Close notification"
+        size: 22
+        icon: "\u{f0156}"
+        label: "Close notification"
+        onClicked: card.leave("dismiss")
     }
 
     Rectangle {
@@ -174,12 +147,11 @@ Rectangle {
         visible: !card.critical
         anchors.bottom: parent.bottom
         anchors.left: parent.left
-        anchors.leftMargin: Theme.radius
-        height: 2
-        radius: 1
+        anchors.margins: card.border.width
+        height: 3
         color: Theme.primary
         property real progress: 1
-        width: (parent.width - 2 * Theme.radius) * progress
+        width: (parent.width - 2 * card.border.width) * progress
 
         NumberAnimation on progress {
             running: !card.critical

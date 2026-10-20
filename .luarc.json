@@ -11,6 +11,7 @@
   ],
   "workspace.checkThirdParty": false,
   "diagnostics.globals": [
-    "hl"
+    "hl",
+    "vim"
   ]
 }

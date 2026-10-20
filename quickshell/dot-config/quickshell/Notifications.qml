@@ -28,10 +28,10 @@ Scope {
             top: Theme.gapsOut
             right: Theme.gapsOut
         }
-        implicitWidth: 360 + 16
-        implicitHeight: Math.max(1, list.contentHeight)
+        implicitWidth: 360 + 16 + Theme.shadowOffset
+        implicitHeight: Math.max(1, list.contentHeight + Theme.shadowOffset)
         color: "transparent"
-        exclusionMode: ExclusionMode.Ignore
+        exclusionMode: ExclusionMode.Normal
         WlrLayershell.layer: WlrLayer.Overlay
         WlrLayershell.namespace: "quickshell-notifications"
 
@@ -45,7 +45,7 @@ Scope {
             width: 360
             height: contentHeight
             interactive: false
-            spacing: Theme.gapsIn
+            spacing: Theme.gapsIn + Theme.shadowOffset
             verticalLayoutDirection: ListView.BottomToTop
             model: server.trackedNotifications
 

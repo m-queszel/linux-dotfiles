@@ -21,7 +21,7 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
         layoutDirection: root.revealLeft ? Qt.RightToLeft : Qt.LeftToRight
 
-        Text {
+        FringeText {
             anchors.verticalCenter: parent.verticalCenter
             text: root.leader
             color: root.leaderColor

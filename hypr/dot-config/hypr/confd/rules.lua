@@ -26,6 +26,28 @@ hl.layer_rule({
 })
 
 hl.layer_rule({
+    name = "quickshell-bar",
+    match = { namespace = "^quickshell-bar$" },
+    blur = true,
+    ignore_alpha = 0.3,
+    no_anim = true,
+})
+
+hl.layer_rule({
+    name = "quickshell-dropdown",
+    match = { namespace = "^quickshell-dropdown$" },
+    blur = true,
+    ignore_alpha = 0.3,
+    no_anim = true,
+})
+
+hl.layer_rule({
+    name = "quickshell-catcher",
+    match = { namespace = "^quickshell-catcher$" },
+    no_anim = true,
+})
+
+hl.layer_rule({
     name = "notifications",
     match = { namespace = "^quickshell-notifications$" },
     blur = true,
