@@ -1,6 +1,6 @@
 typeset -g _pp_glyph
 
-if [[ $TERM != xterm-kitty ]]; then
+if [[ $TERM != xterm-kitty && ! ( -n $TMUX && $(tmux display -p '#{client_termname}' 2>/dev/null) == xterm-kitty ) ]]; then
     PROMPT+=$'\n''%(?.%F{green}.%F{red})❯%f '
     return 0
 fi
@@ -10,8 +10,31 @@ typeset -g _pp_colors=${XDG_STATE_HOME:-$HOME/.local/state}/theme/colors.json
 typeset -g _pp_cell _pp_cache _pp_prev
 typeset -g _pp_starship _pp_hdr _pp_strip _pp_dim
 typeset -g _pp_title_art
-typeset -gi _pp_hdr_w _pp_sid _pp_stale
+typeset -gi _pp_hdr_w _pp_sid _pp_stale _pp_lamp_check
 typeset -gA _pp_payload
+
+_pp_out() {
+    if [[ -z $TMUX ]]; then
+        print -rn -- $1 >/dev/tty
+        return
+    fi
+    local d=${1//$'\e'/$'\e\e'}
+    d=${d//$'\e\e\\'/$'\e\e\\\e\\\ePtmux;'}
+    print -rn -- $'\ePtmux;'${d%$'\ePtmux;'} >/dev/tty
+}
+
+_pp_lamp() {
+    _pp_lamp_check=0
+    [[ -n $TMUX ]] || return 0
+    local kgp=$_pp_cache/lava.kgp lava=${XDG_CONFIG_HOME:-$HOME/.config}/zsh/lava.py
+    if [[ ! -e $kgp || $_pp_colors -nt $kgp || $lava -nt $kgp ]]; then
+        { python3 -I $lava ${_pp_cell%x*} ${_pp_cell#*x} $_pp_colors $_pp_cache && kill -USR1 $$ } &>/dev/null &!
+        return 0
+    fi
+    [[ $(tmux show -qv @lamp_need) != 0 ]] || return 0
+    _pp_out "$(<$kgp)"
+    tmux set -q @lamp_need 0
+}
 
 _pp_measure() {
     local reply
@@ -71,7 +94,7 @@ _pp_strip_build() {
 _pp_freeze() {
     [[ -n $_pp_prev ]] || return 0
     local -a p=(${=_pp_prev})
-    print -rn -- ${_pp_payload[$p[2]-still]//@ID@/$p[1]}${_pp_payload[strip-still]//@ID@/$p[3]} >/dev/tty
+    _pp_out ${_pp_payload[$p[2]-still]//@ID@/$p[1]}${_pp_payload[strip-still]//@ID@/$p[3]}
     _pp_prev=
 }
 
@@ -84,7 +107,8 @@ _pp_precmd() {
     _pp_freeze
     id=$(( ((RANDOM << 9) ^ RANDOM) % 16777214 + 1 ))
     _pp_sid=$(( ((RANDOM << 9) ^ RANDOM) % 16777214 + 1 ))
-    print -rn -- ${_pp_payload[$variant]//@ID@/$id}${_pp_payload[strip]//@ID@/$_pp_sid} >/dev/tty
+    _pp_out ${_pp_payload[$variant]//@ID@/$id}${_pp_payload[strip]//@ID@/$_pp_sid}
+    (( ! _pp_lamp_check )) || _pp_lamp
     _pp_prev="$id $variant $_pp_sid"
     _pp_glyph="%3{"$'\e[38;2;'$(( id >> 16 & 255 ))\;$(( id >> 8 & 255 ))\;$(( id & 255 ))$'m\U10EEEE\u0305\u0305\U10EEEE\U10EEEE\e[39m'"%} "
     _pp_strip_build
@@ -99,17 +123,18 @@ _pp_restyle() {
     _pp_stale=0 _pp_payload=()
     (( ! $+functions[_ls_colors] )) || _ls_colors
     _pp_load || return 0
-    [[ -z $_pp_title_art ]] || print -rn -- "$(<$_pp_title_art)" >/dev/tty
+    [[ -z $_pp_title_art ]] || _pp_out "$(<$_pp_title_art)"
 }
 
 TRAPUSR1() {
-    _pp_stale=1
+    _pp_stale=1 _pp_lamp_check=1
     zle || return 0
     _pp_restyle
     if [[ -n $_pp_prev ]]; then
         local -a p=(${=_pp_prev})
-        print -rn -- ${_pp_payload[$p[2]]//@ID@/$p[1]}${_pp_payload[strip]//@ID@/$p[3]} >/dev/tty
+        _pp_out ${_pp_payload[$p[2]]//@ID@/$p[1]}${_pp_payload[strip]//@ID@/$p[3]}
     fi
+    _pp_lamp
     _pp_header
     _pp_strip_build
     zle reset-prompt
@@ -119,6 +144,7 @@ TRAPUSR1() {
 _pp_unregister() { rm -f $_pp_dir/shells/$$ }
 
 if _pp_measure; then
+    [[ -z $TMUX ]] || _pp_lamp_check=1
     mkdir -p $_pp_dir/shells
     () {
         local st=$(</proc/$$/stat)

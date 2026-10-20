@@ -15,8 +15,15 @@ for dir in "$cache"/*x*/; do
     if [[ -e $dir/title.vars ]]; then
         python3 -I "$zdir/armillary.py" "${cell%x*}" "${cell#*x}" "$colors" "$dir" &
     fi
+    if [[ -e $dir/lava.kgp ]]; then
+        python3 -I "$zdir/lava.py" "${cell%x*}" "${cell#*x}" "$colors" "$dir" &
+    fi
 done
 wait
+
+if tmux has-session 2>/dev/null; then
+    tmux list-sessions -F '#{session_id}' | while read -r s; do tmux set -t "$s" @lamp_need 1; done
+fi
 
 for f in "$cache"/shells/*; do
     [[ -e $f ]] || continue

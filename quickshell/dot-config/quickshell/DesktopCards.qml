@@ -42,6 +42,13 @@ PanelWindow {
     WlrLayershell.namespace: "quickshell-desktop"
     mask: Region {}
 
+    component TrackTitle: Text {
+        color: Theme.onSurface
+        font.family: Theme.font
+        font.pixelSize: 14
+        font.weight: Font.Bold
+    }
+
     SystemClock {
         id: clock
         precision: SystemClock.Minutes
@@ -128,15 +135,86 @@ PanelWindow {
                 horizontalAlignment: Text.AlignRight
             }
 
-            Text {
+            Row {
                 visible: root.player !== null
                 width: parent.width
-                topPadding: 6
-                text: root.player ? `\u{f075a}  ${root.player.trackTitle}${root.player.trackArtist ? " · " + root.player.trackArtist : ""}` : ""
-                color: Theme.tertiary
-                font.family: Theme.font
-                font.pixelSize: 13
-                elide: Text.ElideRight
+                topPadding: 10
+                spacing: 12
+
+                RecordArt {
+                    id: record
+
+                    anchors.verticalCenter: parent.verticalCenter
+                    playing: root.player !== null && root.shown
+                    art: root.player?.trackArtUrl ?? ""
+                }
+
+                Column {
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: parent.width - record.width - parent.spacing
+                    spacing: 2
+
+                    Item {
+                        id: marquee
+
+                        readonly property string text: root.player?.trackTitle ?? ""
+                        readonly property bool overflow: title.implicitWidth > width
+                        readonly property int gap: 48
+                        readonly property int holdTicks: 45
+                        property int hold: holdTicks
+
+                        width: parent.width
+                        height: title.implicitHeight
+                        clip: true
+                        onTextChanged: {
+                            track.x = 0;
+                            hold = holdTicks;
+                        }
+
+                        Row {
+                            id: track
+
+                            spacing: marquee.gap
+
+                            TrackTitle {
+                                id: title
+                                text: marquee.text
+                            }
+                            TrackTitle {
+                                visible: marquee.overflow
+                                text: marquee.text
+                            }
+                        }
+
+                        // Timer, not an animation: animations redraw on every 240 Hz vsync
+                        Timer {
+                            interval: 33
+                            repeat: true
+                            running: marquee.overflow && root.visible && root.player !== null
+                            onTriggered: {
+                                if (marquee.hold > 0) {
+                                    marquee.hold--;
+                                    return;
+                                }
+                                track.x -= 1;
+                                if (track.x <= -(title.implicitWidth + marquee.gap)) {
+                                    track.x = 0;
+                                    marquee.hold = marquee.holdTicks;
+                                }
+                            }
+                        }
+                    }
+
+                    Text {
+                        visible: text !== ""
+                        width: parent.width
+                        text: root.player?.trackArtist ?? ""
+                        color: Theme.tertiary
+                        font.family: Theme.font
+                        font.pixelSize: 12
+                        elide: Text.ElideRight
+                    }
+                }
             }
         }
     }

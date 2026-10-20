@@ -1,1 +1,3 @@
-vim.opt.clipboard = "unnamedplus"
+require("joseph.options")
+require("joseph.keybinds")
+require("config.lazy")

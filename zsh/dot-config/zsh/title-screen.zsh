@@ -1,6 +1,13 @@
-[[ -z $_TITLE_SHOWN && -z $SSH_CONNECTION && -n $_pp_cell ]] || return 0
+[[ -z $SSH_CONNECTION && -n $_pp_cell ]] || return 0
 (( COLUMNS >= 70 && LINES >= 16 )) || return 0
-export _TITLE_SHOWN=1
+if [[ -n $TMUX ]]; then
+    # one title per window: panes share the image id, so two on screen restart each other
+    [[ $(tmux display -p '#{window_panes}#{@title_win}') == 1 ]] || return 0
+    tmux set -wq @title_win 1
+else
+    [[ -z $_TITLE_SHOWN ]] || return 0
+    export _TITLE_SHOWN=1
+fi
 
 _title_draw() {
     (( COLUMNS >= 70 && LINES >= 16 )) || return 0
@@ -62,7 +69,7 @@ _title_draw() {
     local artfg="${esc}$(( id >> 16 & 255 ));$(( id >> 8 & 255 ));$(( id & 255 ))m"
     fill=${fill//x/$ph}
     _pp_title_art=$dir/armillary.kgp
-    out=$(<$_pp_title_art)
+    _pp_out "$(<$_pp_title_art)"
     for i in {1..8}; do
         out+="$artfg$ph$rowmark[i]"$'\u0305'"$fill$rst${E}[${c0}G$row[i]$rst"$'\n'
     done
