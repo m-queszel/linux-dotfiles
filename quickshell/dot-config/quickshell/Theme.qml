@@ -14,6 +14,12 @@ Singleton {
     readonly property int borderWidth: 2
     readonly property int shadowOffset: 5
 
+    // Material 3 emphasized curves, shared with Hyprland's emphasizedDecel/emphasizedAccel
+    readonly property var enterCurve: [0.05, 0.7, 0.1, 1, 1, 1]
+    readonly property var exitCurve: [0.3, 0, 0.8, 0.15, 1, 1]
+    readonly property int enterMs: 400
+    readonly property int exitMs: 200
+
     readonly property string font: "0xProto Nerd Font"
     readonly property string iconFont: "0xProto Nerd Font"
     readonly property int fontSize: 13

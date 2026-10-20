@@ -49,8 +49,9 @@ Scope {
 
                     Behavior on y {
                         NumberAnimation {
-                            duration: 380
-                            easing.type: Easing.OutCubic
+                            duration: Theme.enterMs
+                            easing.type: Easing.BezierSpline
+                            easing.bezierCurve: Theme.enterCurve
                         }
                     }
 
@@ -155,6 +156,14 @@ Scope {
             VolumeOsd {
                 screen: screenScope.modelData
                 suppressed: sound.open
+            }
+
+            ScreenCorners {
+                screen: screenScope.modelData
+            }
+
+            DesktopCards {
+                screen: screenScope.modelData
             }
         }
     }

@@ -48,6 +48,20 @@ hl.layer_rule({
 })
 
 hl.layer_rule({
+    name = "quickshell-desktop",
+    match = { namespace = "^quickshell-desktop$" },
+    blur = true,
+    ignore_alpha = 0.3,
+    no_anim = true,
+})
+
+hl.layer_rule({
+    name = "quickshell-corners",
+    match = { namespace = "^quickshell-corners$" },
+    no_anim = true,
+})
+
+hl.layer_rule({
     name = "notifications",
     match = { namespace = "^quickshell-notifications$" },
     blur = true,
