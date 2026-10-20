@@ -1,6 +1,11 @@
 local ok, colors = pcall(require, "colors")
 if not ok then
-    colors = { primary = "b86b4f", outline_variant = "4f4539", shadow = "000000", surface = "1a120d" }
+    colors = {
+        primary = "b86b4f",
+        tertiary = "cbc992",
+        outline_variant = "52443c",
+        surface = "1a120d",
+    }
 end
 
 local function rgba(hex, alpha)
@@ -12,33 +17,26 @@ hl.config({
         gaps_in = 6,
         gaps_out = 12,
         border_size = 2,
-        col = {
-            active_border = rgba(colors.primary, 1),
-            inactive_border = rgba(colors.outline_variant, 0.4),
-        },
         resize_on_border = false,
         allow_tearing = false,
         layout = "dwindle",
     },
 
     decoration = {
-        rounding = 14,
+        rounding = 8,
         rounding_power = 2,
         active_opacity = 1.0,
         inactive_opacity = 1.0,
         shadow = {
             enabled = true,
-            range = 16,
-            render_power = 3,
-            offset = { 0, 4 },
-            color = rgba(colors.shadow, 0.35),
-            color_inactive = rgba(colors.shadow, 0.2),
+            sharp = true,
+            range = 0,
+            offset = { 7, 7 },
         },
         blur = {
             enabled = true,
             size = 5,
-            passes = 2,
-            vibrancy = 0.17,
+            passes = 1,
             popups = false,
             special = false,
         },
@@ -68,12 +66,45 @@ hl.config({
     },
 })
 
+local function setEdges(alpha)
+    hl.config({
+        general = {
+            col = {
+                active_border = rgba(colors.primary, alpha),
+                inactive_border = rgba(colors.outline_variant, alpha),
+            },
+        },
+        decoration = {
+            shadow = {
+                color = rgba(colors.tertiary, alpha),
+                color_inactive = rgba(colors.tertiary, alpha),
+            },
+        },
+    })
+end
+
+setEdges(1)
+
+local SLIDE_MS = 300
+local switches = 0
+
+hl.on("workspace.active", function()
+    switches = switches + 1
+    local this = switches
+    setEdges(0)
+    hl.timer(function()
+        if this == switches then
+            setEdges(1)
+        end
+    end, { timeout = SLIDE_MS, type = "oneshot" })
+end)
+
 hl.curve("gentle", { type = "spring", mass = 1, stiffness = 200, dampening = 24 })
 hl.curve("easeOutQuint", { type = "bezier", points = { { 0.23, 1 }, { 0.32, 1 } } })
 hl.curve("quick", { type = "bezier", points = { { 0.15, 0 }, { 0.1, 1 } } })
 
 hl.animation({ leaf = "global", enabled = true, speed = 6, bezier = "default" })
-hl.animation({ leaf = "border", enabled = true, speed = 3, bezier = "easeOutQuint" })
+hl.animation({ leaf = "border", enabled = false })
 hl.animation({ leaf = "windows", enabled = true, speed = 4, spring = "gentle" })
 hl.animation({ leaf = "windowsIn", enabled = true, speed = 4, spring = "gentle", style = "popin 90%" })
 hl.animation({ leaf = "windowsOut", enabled = true, speed = 1.5, bezier = "easeOutQuint", style = "popin 90%" })

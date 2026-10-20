@@ -280,7 +280,8 @@ def main():
         tmp.replace(out_dir / file)
 
     dim, star = color("outline_variant", "#52443c"), color("tertiary", "#cbc992")
-    strip = strip_frames(cell_w, cell_h, dim, star, color("on_surface", "#f0dfd7"), color("surface", "#1a120d"))
+    paper = color("surface_dim", "#e8d7cf") if colors.get("mode") == "light" else color("surface", "#1a120d")
+    strip = strip_frames(cell_w, cell_h, dim, star, color("on_surface", "#f0dfd7"), paper)
     sw = (STRIP_STARS + 1) * cell_w
     write("strip.kgp", animation(strip, sw, cell_h, STRIP_STARS + 1))
     write("strip-still.kgp", still(strip[-1][0], sw, cell_h, STRIP_STARS + 1))

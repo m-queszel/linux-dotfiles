@@ -45,7 +45,8 @@ def ring_point(ring, t, th, rr):
 def render(t, w, h, k, pal):
     bob = rnd(1.5 * k * math.sin(2 * math.pi * t / (LOOP / 3)))
     cx, cy, R = w / 2, h / 2 + bob, 26 * k
-    orb, ring_ramp, ink = pal["orb"], pal["ring"], pal["ink"]
+    orb, ring_ramp, ink, light = pal["orb"], pal["ring"], pal["ink"], pal["light"]
+    halo = pc.mix(pal["horizon"], pal["glow"], 0.5) if light else orb[2]
     col, zb = [None] * (w * h), [-1e9] * (w * h)
     planets = []
     for i, ring in enumerate(RINGS):
@@ -60,6 +61,11 @@ def render(t, w, h, k, pal):
                 continue
             nz = math.sqrt(1 - d2)
             r = math.sqrt(d2)
+            if light:
+                edge = 0.84 + pulse / 2
+                hole = pal["horizon"] if r > 0.95 else pal["glow"] if r > edge else pal["core"] if r < 0.6 else pal["ink"]
+                col[y * w + x], zb[y * w + x] = hole, nz * R
+                continue
             tone = 5 if r < 0.32 + pulse else 4 if r < 0.55 + pulse else 3 if r < 0.78 else 2 if r < 0.92 else 1
             best, best_ramp = 0.0, None
             for px, py, pz, pramp, _ in planets:
@@ -75,8 +81,9 @@ def render(t, w, h, k, pal):
     for y in range(max(0, int(cy - R - 5)), min(h, int(cy + R) + 6)):
         for x in range(max(0, int(cx - R - 5)), min(w, int(cx + R) + 6)):
             d = math.hypot(x + 0.5 - cx, y + 0.5 - cy)
-            if R + 1 < d < R + 4 and (x + y) % 2 == 0 and not col[y * w + x]:
-                col[y * w + x], zb[y * w + x] = orb[2], -999
+            sparse = x % 2 == 0 and y % 2 == 0 if light else (x + y) % 2 == 0
+            if R + 1 < d < R + 4 and sparse and not col[y * w + x]:
+                col[y * w + x], zb[y * w + x] = halo, -999
 
     def plot(x, y, z, c):
         x, y = rnd(x), rnd(y)
@@ -95,37 +102,43 @@ def render(t, w, h, k, pal):
             th = 2 * math.pi * j / n
             for rr in (r, r - 1.2):
                 x, y, z = ring_point(ring, t, th, rr)
+                if light and rr != r and z < 0:
+                    continue
                 lam = (x * LIGHT[0] + y * LIGHT[1] + z * LIGHT[2]) / rr
                 tone = 5 if lam > 0.88 else max(1, min(4, rnd(1 + 3 * (0.6 * (z / rr + 1) / 2 + 0.4 * (lam + 1) / 2))))
                 for px, py, pz, _, _ in planets:
                     if math.hypot(px - x, py - y, pz - z) < 14 * k:
                         tone = min(5, tone + 1)
-                plot(cx + x, cy + y, z, ring_ramp[tone])
+                c = pal["glow"] if light and z > 0 and math.hypot(x, y) < R else ring_ramp[tone]
+                plot(cx + x, cy + y, z, c)
         for b in range(ring[5]):
             x, y, z = ring_point(ring, t, 2 * math.pi * b / ring[5], r - 0.6)
             for j in range(2):
                 for i in range(2):
                     plot(cx + x - 1 + i + 0.5, cy + y - 1 + j + 0.5, z + 0.5, ring_ramp[5 if z > 0 else 2])
     for px, py, pz, pramp, _ in planets:
-        for j in range(-2, 3):
-            for i in range(-2, 3):
+        for j in range(-3, 4):
+            for i in range(-3, 4):
                 d = i * i + j * j
                 if d <= 5:
                     plot(cx + px + i, cy + py + j, pz + 3, pal["peak"] if d == 0 else pramp[5] if d <= 2 else pramp[3])
+                elif light and d <= 10:
+                    plot(cx + px + i, cy + py + j, pz + 2, ink)
     out = col[:]
-    for y in range(h):
-        for x in range(w):
-            if col[y * w + x]:
-                continue
-            n = (
-                (y > 0 and col[(y - 1) * w + x])
-                or (x > 0 and col[y * w + x - 1])
-                or (x < w - 1 and col[y * w + x + 1])
-                or (y < h - 1 and col[(y + 1) * w + x])
-            )
-            if n:
-                out[y * w + x] = pc.mix(n, ink, 0.78)
-    for px, py, pz, pramp, _ in planets:
+    if not light:
+        for y in range(h):
+            for x in range(w):
+                if col[y * w + x]:
+                    continue
+                n = (
+                    (y > 0 and col[(y - 1) * w + x])
+                    or (x > 0 and col[y * w + x - 1])
+                    or (x < w - 1 and col[y * w + x + 1])
+                    or (y < h - 1 and col[(y + 1) * w + x])
+                )
+                if n:
+                    out[y * w + x] = pc.mix(n, ink, 0.78)
+    for px, py, pz, pramp, _ in () if light else planets:
         gx, gy = rnd(cx + px), rnd(cy + py)
         if pz < 0 and math.hypot(gx + 0.5 - cx, gy + 0.5 - cy) < R:
             continue
@@ -160,6 +173,7 @@ def self_check():
     differ = lambda x, y: sum(x[i : i + 4] != y[i : i + 4] for i in range(0, len(x), 4))
     assert differ(a, b) * 20 < differ(a, c), "the loop isn't seamless"
     assert any(a[i + 3] for i in range(0, len(a), 4)), "empty frame"
+    assert any(render(0, 192, 208, 1.0, palette({"mode": "light"}))[3::4]), "empty light frame"
     print("ok")
 
 
@@ -168,6 +182,7 @@ def palette(colors):
         return pc.hex_rgb(colors.get(key, fallback))
 
     pal = {
+        "light": colors.get("mode") == "light",
         "orb": pc.ramp(c("primary", "#ffb68a"), -8, 8),
         "ring": pc.ramp(c("tertiary", "#cbc992"), -10, 8),
         "peak": c("on_surface", "#f0dfd7"),
@@ -177,6 +192,16 @@ def palette(colors):
     for key, fallback in (("secondary", "#e5bfa9"), ("tertiary", "#cbc992"), ("on_surface", "#f0dfd7")):
         pal[key + "_rgb"] = c(key, fallback)
         pal[key] = pc.ramp(pal[key + "_rgb"], -8, 8)
+    if pal["light"]:
+        ink, back = c("on_surface_variant", "#4c4639"), c("outline_variant", "#cec6b4")
+        pal["ink"] = ink
+        pal["core"] = pc.mix(ink, c("on_surface", "#1e1b13"), 0.35)
+        pal["horizon"] = c("primary", "#725c0c")
+        pal["glow"] = c("primary_fixed_dim", "#e1c46d")
+        pal["ring"] = [pc.mix(back, ink, i / 5) for i in range(6)]
+        pal["peak"] = pal["horizon"]
+        pal["dim"] = c("outline", "#7d7667")
+        pal["tertiary_rgb"] = pal["glow"]
     return pal
 
 

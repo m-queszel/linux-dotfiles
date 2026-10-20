@@ -1,44 +1,51 @@
 /* Fallback colors only; matugen's generated colors.rasi overrides them. */
 * {
     surface: #2a201be6;
-    field: #3a2f29;
+    raise: #31282e;
     text: #f0dfd7;
     text-dim: #d7c2b8;
     accent: #ffb68a;
+    edge: #ffb68a;
+    shadow: #cbc992;
     selected: #6b3b1e;
     on-selected: #ffdbc8;
-    border: #52443c;
 }
 
 ?import "colors.rasi"
 
 * {
-    font: "Nunito 12";
+    font: "0xProto Nerd Font 12";
     background-color: transparent;
     text-color: @text;
 }
 
+/* rofi has no box-shadow: the window's right/bottom border is the hard shadow behind mainbox */
 window {
     location: center;
     anchor: center;
-    width: 640px;
-    padding: 14px;
-    border: 1px solid;
-    border-color: @border;
-    border-radius: 14px;
-    background-color: @surface;
+    width: 645px;
+    border: 0px 5px 5px 0px;
+    border-color: @shadow;
+    border-radius: 10px;
 }
 
 mainbox {
+    padding: 14px;
     spacing: 12px;
+    border: 2px;
+    border-color: @edge;
+    border-radius: 8px;
+    background-color: @surface;
     children: [ inputbar, message, listview ];
 }
 
 inputbar {
     padding: 10px 14px;
     spacing: 12px;
-    border-radius: 10px;
-    background-color: @field;
+    border: 2px;
+    border-color: @text-dim;
+    border-radius: 6px;
+    background-color: @raise;
     children: [ prompt, entry ];
 }
 
@@ -57,8 +64,10 @@ entry {
 
 message {
     padding: 10px 14px;
-    border-radius: 10px;
-    background-color: @field;
+    border: 2px;
+    border-color: @text-dim;
+    border-radius: 6px;
+    background-color: @raise;
 }
 
 listview {
@@ -70,9 +79,11 @@ listview {
 }
 
 element {
-    padding: 8px 12px;
+    padding: 7px 12px;
     spacing: 12px;
-    border-radius: 10px;
+    border: 2px;
+    border-color: transparent;
+    border-radius: 6px;
     cursor: pointer;
 }
 
@@ -83,6 +94,7 @@ element alternate.normal {
 
 element selected.normal {
     background-color: @selected;
+    border-color: @text;
     text-color: @on-selected;
 }
 

@@ -12,8 +12,6 @@ RevealItem {
     leader: muted ? "󰝟" : percent < 34 ? "󰕿" : percent < 67 ? "󰖀" : "󰕾"
     value: audio ? (muted ? "muted" : percent + "%") : "no output"
 
-    onClicked: if (audio)
-        audio.muted = !audio.muted
     onScrolled: steps => {
         if (audio)
             audio.volume = Math.max(0, Math.min(1, audio.volume + steps * 0.05));

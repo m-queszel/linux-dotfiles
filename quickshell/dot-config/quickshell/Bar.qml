@@ -1,91 +1,160 @@
 import QtQuick
 import Quickshell
-import Quickshell.Hyprland
-import Quickshell.Io
 import Quickshell.Wayland
 
 Scope {
     id: root
 
-    property bool peeking: false
-    property bool pinned: false
-    readonly property bool shown: peeking || pinned
+    property bool shown: false
 
-    Connections {
-        target: Hyprland
-        function onRawEvent(event) {
-            if (event.name !== "custom")
-                return;
-            const m = event.data.match(/^bar:(peek|pin):([01])$/);
-            if (!m)
-                return;
-            if (m[1] === "peek")
-                root.peeking = m[2] === "1";
-            else
-                root.pinned = m[2] === "1";
-        }
-    }
-
-    FileView {
-        path: Theme.stateDir + "/bar-pinned"
-        printErrors: false
-        onLoaded: root.pinned = true
+    Component.onCompleted: {
+        shown = true;
+        Glitch.burst();
     }
 
     Variants {
         model: Quickshell.screens
 
-        PanelWindow {
-            id: panel
+        Scope {
+            id: screenScope
 
             required property var modelData
-            screen: modelData
 
-            anchors {
-                top: true
-                left: true
-                right: true
+            PanelWindow {
+                id: panel
+
+                screen: screenScope.modelData
+
+                anchors {
+                    top: true
+                    left: true
+                    right: true
+                }
+                implicitHeight: strip.height + Theme.shadowOffset
+                color: "transparent"
+                exclusiveZone: strip.height
+                WlrLayershell.layer: WlrLayer.Top
+                WlrLayershell.namespace: "quickshell-bar"
+
+                mask: Region {
+                    item: strip
+                }
+
+                Item {
+                    id: strip
+
+                    width: panel.width
+                    height: Theme.pillHeight + Theme.borderWidth
+                    y: root.shown ? 0 : -height - Theme.shadowOffset
+
+                    Behavior on y {
+                        NumberAnimation {
+                            duration: 380
+                            easing.type: Easing.OutCubic
+                        }
+                    }
+
+                    Rectangle {
+                        y: parent.height
+                        width: parent.width
+                        height: Theme.shadowOffset
+                        color: Theme.tertiary
+                    }
+
+                    Rectangle {
+                        y: Theme.pillHeight
+                        width: parent.width
+                        height: Theme.borderWidth
+                        color: Theme.primary
+                    }
+
+                    Rectangle {
+                        width: parent.width
+                        height: Theme.pillHeight
+                        color: Theme.pill
+
+                        Behavior on color {
+                            ColorAnimation {
+                                duration: 400
+                            }
+                        }
+                    }
+
+                    Row {
+                        x: Theme.gapsOut + Glitch.jitter
+                        height: Theme.pillHeight
+
+                        Workspaces {}
+                    }
+
+                    Visualizer {
+                        x: (strip.width - width) / 2
+                        popup: media
+                    }
+
+                    Row {
+                        x: strip.width - width - Theme.gapsOut + Glitch.jitter
+                        height: Theme.pillHeight
+                        spacing: 16
+
+                        Volume {
+                            onClicked: sound.open = !sound.open
+                        }
+                        NetworkStatus {
+                            onClicked: sound.open = !sound.open
+                        }
+                        SystemStats {
+                            active: root.shown
+                        }
+                        Rectangle {
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: 1
+                            height: 18
+                            color: Qt.alpha(Theme.outlineVariant, 0.7)
+                        }
+                        Clock {}
+                    }
+                }
             }
-            implicitHeight: Theme.gapsOut + Theme.pillHeight
-            color: "transparent"
-            exclusionMode: ExclusionMode.Ignore
-            WlrLayershell.layer: WlrLayer.Top
-            WlrLayershell.namespace: "quickshell-bar"
 
-            mask: Region {
-                Region {
-                    item: root.shown ? leftPill : null
+            // Clicking anywhere outside an open dropdown closes it; dropdowns sit above on the overlay layer
+            PanelWindow {
+                screen: screenScope.modelData
+                visible: media.open || sound.open
+
+                anchors {
+                    top: true
+                    bottom: true
+                    left: true
+                    right: true
                 }
-                Region {
-                    item: root.shown ? rightPill : null
+                color: "transparent"
+                exclusionMode: ExclusionMode.Ignore
+                WlrLayershell.layer: WlrLayer.Top
+                WlrLayershell.namespace: "quickshell-catcher"
+
+                MouseArea {
+                    anchors.fill: parent
+                    onPressed: {
+                        media.open = false;
+                        sound.open = false;
+                    }
                 }
             }
 
-            Pill {
-                id: leftPill
-                shown: root.shown
-                x: Theme.gapsOut
-                Workspaces {}
+            MediaPopup {
+                id: media
+                screen: screenScope.modelData
             }
 
-            Pill {
-                id: rightPill
-                shown: root.shown
-                x: panel.width - width - Theme.gapsOut
-                spacing: 16
+            SoundPopup {
+                id: sound
+                screen: screenScope.modelData
+            }
 
-                Volume {}
-                NetworkStatus {}
-                SystemStats {
-                    active: root.shown
-                }
-                Rectangle {
-                    anchors.verticalCenter: parent.verticalCenter
-                    width: 1
-                    height: 18
-                    color: Qt.alpha(Theme.outlineVariant, 0.7)
-                }
-                Clock {}
+            VolumeOsd {
+                screen: screenScope.modelData
+                suppressed: sound.open
             }
         }
     }
