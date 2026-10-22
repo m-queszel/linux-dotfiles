@@ -31,9 +31,10 @@ _pp_lamp() {
         { python3 -I $lava ${_pp_cell%x*} ${_pp_cell#*x} $_pp_colors $_pp_cache && kill -USR1 $$ } &>/dev/null &!
         return 0
     fi
-    local fd
+    local fd lock=$_pp_cache/.lamp-$(tmux display -p '#{session_id}')
     zmodload -F zsh/system b:zsystem
-    zsystem flock -t 0 -f fd $_pp_cache/.lamp-$(tmux display -p '#{session_id}') 2>/dev/null || return 0
+    : >>$lock
+    zsystem flock -t 0 -f fd $lock 2>/dev/null || return 0
     if [[ $(tmux show -qv @lamp_need) != 0 ]]; then
         _pp_out "$(<$kgp)"
         tmux set -q @lamp_need 0
