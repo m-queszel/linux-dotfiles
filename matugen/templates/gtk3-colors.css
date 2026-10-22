@@ -1,0 +1,255 @@
+@import url("file:///usr/share/themes/adw-gtk3{{ mode | replace: "light", "" | replace: "dark", "-dark" }}/gtk-3.0/gtk.css");
+@define-color accent_color {{ colors.primary.default.hex }};
+@define-color accent_bg_color {{ colors.primary.default.hex }};
+@define-color accent_fg_color {{ colors.on_primary.default.hex }};
+@define-color destructive_color {{ colors.error.default.hex }};
+@define-color destructive_bg_color {{ colors.error.default.hex }};
+@define-color destructive_fg_color {{ colors.on_error.default.hex }};
+@define-color error_color {{ colors.error.default.hex }};
+@define-color error_bg_color {{ colors.error.default.hex }};
+@define-color error_fg_color {{ colors.on_error.default.hex }};
+
+@define-color window_bg_color {{ colors.surface.default.hex }};
+@define-color window_fg_color {{ colors.on_surface.default.hex }};
+@define-color view_bg_color {{ colors.surface_container_low.default.hex }};
+@define-color view_fg_color {{ colors.on_surface.default.hex }};
+@define-color headerbar_bg_color {{ colors.surface_container.default.hex }};
+@define-color headerbar_fg_color {{ colors.on_surface.default.hex }};
+@define-color headerbar_backdrop_color {{ colors.surface.default.hex }};
+@define-color sidebar_bg_color {{ colors.surface_container.default.hex }};
+@define-color sidebar_fg_color {{ colors.on_surface.default.hex }};
+@define-color sidebar_backdrop_color {{ colors.surface_container_low.default.hex }};
+@define-color card_bg_color {{ colors.surface_container_high.default.hex }};
+@define-color card_fg_color {{ colors.on_surface.default.hex }};
+@define-color dialog_bg_color {{ colors.surface_container_high.default.hex }};
+@define-color dialog_fg_color {{ colors.on_surface.default.hex }};
+@define-color popover_bg_color {{ colors.surface_container_high.default.hex }};
+@define-color popover_fg_color {{ colors.on_surface.default.hex }};
+
+window.thunar {
+    background-color: transparent;
+    color: {{ colors.on_surface.default.hex }};
+    font-family: "0xProto Nerd Font";
+    font-size: 11pt;
+}
+
+.thunar paned,
+.thunar scrolledwindow,
+.thunar viewport,
+.thunar treeview.view {
+    background-color: transparent;
+    background-image: none;
+}
+
+.thunar .standard-view,
+.thunar notebook > header {
+    background-color: alpha({{ colors.surface.default.hex }}, 0.9);
+    background-image: none;
+}
+
+.thunar toolbar {
+    background-color: alpha({{ colors.surface_container.default.hex }}, 0.9);
+    background-image: none;
+    border-bottom: 1px solid {{ colors.outline_variant.default.hex }};
+    padding: 6px;
+}
+
+.thunar toolbar button {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    border-radius: 5px;
+    color: {{ colors.on_surface_variant.default.hex }};
+    -gtk-icon-shadow: none;
+    transition: background-color 150ms cubic-bezier(0.05, 0.7, 0.1, 1), color 150ms cubic-bezier(0.05, 0.7, 0.1, 1);
+}
+
+.thunar toolbar button:hover {
+    background-color: {{ colors.surface_container_high.default.hex }};
+    color: {{ colors.on_surface.default.hex }};
+}
+
+.thunar entry {
+    background-color: alpha({{ colors.surface_container_low.default.hex }}, 0.7);
+    background-image: none;
+    border: 1px solid {{ colors.outline_variant.default.hex }};
+    border-radius: 5px;
+    box-shadow: none;
+    color: {{ colors.on_surface.default.hex }};
+    caret-color: {{ colors.primary.default.hex }};
+    transition: border-color 200ms cubic-bezier(0.05, 0.7, 0.1, 1), box-shadow 200ms cubic-bezier(0.05, 0.7, 0.1, 1);
+}
+
+.thunar entry:focus {
+    border-color: {{ colors.primary.default.hex }};
+    box-shadow: inset 0 0 0 1px {{ colors.primary.default.hex }};
+}
+
+.thunar entry selection {
+    background-color: alpha({{ colors.primary.default.hex }}, 0.3);
+    color: {{ colors.on_surface.default.hex }};
+}
+
+.thunar .shortcuts-pane {
+    background-color: transparent;
+}
+
+.thunar paned > separator,
+.thunar paned > separator.wide {
+    background: alpha({{ colors.surface.default.hex }}, 0.9);
+    -gtk-icon-source: none;
+    min-width: 0;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-left: 1px solid {{ colors.outline_variant.default.hex }};
+}
+
+.thunar treeview.view {
+    color: {{ colors.on_surface.default.hex }};
+    -GtkTreeView-horizontal-separator: 20;
+}
+
+.thunar treeview.view:selected,
+.thunar treeview.view:selected:focus {
+    background: {{ colors.primary_container.default.hex }};
+    color: {{ colors.on_primary_container.default.hex }};
+}
+
+.thunar treeview.view header button {
+    padding: 2px 8px;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid {{ colors.outline_variant.default.hex }};
+    box-shadow: none;
+    color: {{ colors.outline.default.hex }};
+    font-size: 9pt;
+    transition: background-color 150ms cubic-bezier(0.05, 0.7, 0.1, 1), color 150ms cubic-bezier(0.05, 0.7, 0.1, 1);
+}
+
+.thunar treeview.view header button:hover {
+    background-color: {{ colors.surface_container_high.default.hex }};
+    color: {{ colors.on_surface.default.hex }};
+}
+
+.thunar treeview.view entry {
+    border-color: {{ colors.primary.default.hex }};
+    border-radius: 3px;
+    background-color: {{ colors.surface.default.hex }};
+    box-shadow: 2px 2px 0 {{ colors.tertiary.default.hex }};
+}
+
+.thunar rubberband,
+.thunar .rubberband {
+    border: 1px dashed {{ colors.primary.default.hex }};
+    background-color: alpha({{ colors.primary.default.hex }}, 0.12);
+}
+
+.thunar statusbar {
+    background-color: alpha({{ colors.surface_container_high.default.hex }}, 0.9);
+    background-image: none;
+    border-top: 1px solid {{ colors.outline_variant.default.hex }};
+    color: {{ colors.on_surface_variant.default.hex }};
+    font-size: 10pt;
+}
+
+.thunar scrollbar {
+    background: transparent;
+    border: none;
+}
+
+.thunar scrollbar slider {
+    min-width: 4px;
+    min-height: 4px;
+    border: none;
+    border-radius: 2px;
+    background-color: {{ colors.outline_variant.default.hex }};
+    transition: min-width 200ms cubic-bezier(0.05, 0.7, 0.1, 1), background-color 200ms cubic-bezier(0.05, 0.7, 0.1, 1);
+}
+
+.thunar scrollbar:hover slider {
+    min-width: 7px;
+    background-color: {{ colors.outline.default.hex }};
+}
+
+.csd.popup decoration {
+    border-radius: 8px;
+    box-shadow: 5px 5px 0 {{ colors.tertiary.default.hex }};
+}
+
+menu,
+.menu,
+.context-menu {
+    background-color: alpha({{ colors.surface_container.default.hex }}, 0.96);
+    border: 2px solid {{ colors.outline_variant.default.hex }};
+    border-radius: 8px;
+    padding: 6px;
+    color: {{ colors.on_surface.default.hex }};
+    font-family: "0xProto Nerd Font";
+    font-size: 10.5pt;
+}
+
+menu menuitem {
+    min-height: 18px;
+    padding: 5px 10px;
+    border-radius: 5px;
+    transition: background-color 120ms cubic-bezier(0.05, 0.7, 0.1, 1), color 120ms cubic-bezier(0.05, 0.7, 0.1, 1);
+}
+
+menu menuitem:hover {
+    background-color: {{ colors.primary_container.default.hex }};
+    color: {{ colors.on_primary_container.default.hex }};
+}
+
+menu menuitem:disabled,
+menu menuitem accelerator,
+menu menuitem arrow {
+    color: {{ colors.outline.default.hex }};
+}
+
+menu separator {
+    min-height: 1px;
+    margin: 4px 6px;
+    background-color: {{ colors.outline_variant.default.hex }};
+}
+
+.thunar .path-bar {
+    background-color: alpha({{ colors.surface_container_low.default.hex }}, 0.7);
+    border: 1px solid {{ colors.outline_variant.default.hex }};
+    border-radius: 5px;
+    padding: 2px;
+}
+
+.thunar .path-bar button {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    box-shadow: none;
+    padding: 2px 8px;
+    color: {{ colors.on_surface_variant.default.hex }};
+    -gtk-icon-shadow: none;
+    transition: background-color 150ms cubic-bezier(0.05, 0.7, 0.1, 1), color 150ms cubic-bezier(0.05, 0.7, 0.1, 1), border-color 150ms cubic-bezier(0.05, 0.7, 0.1, 1);
+}
+
+.thunar .path-bar button:hover {
+    background-color: {{ colors.surface_container_high.default.hex }};
+    color: {{ colors.on_surface.default.hex }};
+}
+
+.thunar .path-bar button:checked {
+    color: {{ colors.primary.default.hex }};
+    font-weight: bold;
+}
+
+.thunar .path-bar button:drop(active) {
+    background-color: {{ colors.primary_container.default.hex }};
+    border: 1px dashed {{ colors.primary.default.hex }};
+    color: {{ colors.on_primary_container.default.hex }};
+}
+
+.thunar label,
+.thunar treeview.view,
+.thunar .path-bar button {
+    text-shadow: -1px 0 {{ colors.primary.default.hex }}, 1px 0 {{ colors.tertiary.default.hex }};
+}

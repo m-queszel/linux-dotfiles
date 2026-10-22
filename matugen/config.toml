@@ -1,0 +1,66 @@
+[config]
+prefer = "saturation"
+
+[config.custom_colors]
+red = "#e06c75"
+green = "#98c379"
+yellow = "#e5c07b"
+blue = "#61afef"
+magenta = "#c678dd"
+cyan = "#56b6c2"
+
+[templates.hyprland]
+input_path = "~/.config/matugen/templates/hyprland-colors.lua.tmpl"
+output_path = "~/.local/state/theme/staged/hyprland-colors.lua"
+
+[templates.quickshell]
+input_path = "~/.config/matugen/templates/quickshell-colors.json"
+output_path = "~/.local/state/theme/staged/colors.json"
+
+[templates.rofi]
+input_path = "~/.config/matugen/templates/rofi-colors.rasi"
+output_path = "~/.config/rofi/colors.rasi"
+
+[templates.kitty]
+input_path = "~/.config/matugen/templates/kitty-colors.conf"
+output_path = "~/.local/state/theme/staged/kitty-colors.conf"
+
+[templates.tmux]
+input_path = "~/.config/matugen/templates/tmux-colors.conf"
+output_path = "~/.config/tmux/colors.conf"
+
+[templates.ls-colors]
+input_path = "~/.config/matugen/templates/ls-colors"
+output_path = "~/.config/ls-colors"
+
+[templates.starship]
+input_path = "~/.config/matugen/templates/starship.toml"
+output_path = "~/.config/starship.toml"
+
+[templates.gtk3]
+input_path = "~/.config/matugen/templates/gtk3-colors.css"
+output_path = "~/.local/share/themes/PixelInk-0/gtk-3.0/gtk.css"
+
+[templates.gtk3-alt]
+input_path = "~/.config/matugen/templates/gtk3-colors.css"
+output_path = "~/.local/share/themes/PixelInk-1/gtk-3.0/gtk.css"
+
+[templates.gtk4]
+input_path = "~/.config/matugen/templates/gtk4-colors.css"
+output_path = "~/.config/gtk-4.0/gtk.css"
+
+[templates.qt6ct]
+input_path = "~/.config/matugen/templates/qt6ct-colors.conf"
+output_path = "~/.local/state/theme/staged/qt6ct-colors.conf"
+
+[templates.qt6ct-conf]
+input_path = "~/.config/matugen/templates/qt6ct.conf.tmpl"
+output_path = "~/.local/state/theme/staged/qt6ct.conf"
+
+[templates.kde-colorscheme]
+input_path = "~/.config/matugen/templates/kde-colors.tmpl"
+output_path = "~/.local/share/color-schemes/Matugen.colors"
+
+[templates.hyprlock]
+input_path = "~/.config/matugen/templates/hyprlock-colors.conf"
+output_path = "~/.config/hypr/hyprlock-colors.conf"

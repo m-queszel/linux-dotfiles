@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<actions>
+<action>
+	<icon>utilities-terminal</icon>
+	<name>Open Terminal Here</name>
+	<submenu></submenu>
+	<unique-id>kitty-here</unique-id>
+	<command>uwsm app -- kitty --directory %f</command>
+	<description>Open kitty in this folder (F4)</description>
+	<range></range>
+	<patterns>*</patterns>
+	<directories/>
+</action>
+<action>
+	<name>Just me (private)</name>
+	<submenu>Who can use this</submenu>
+	<unique-id>access-private</unique-id>
+	<command>chmod go-rwx %F</command>
+	<description>Only you can open or change it</description>
+	<range></range>
+	<patterns>*</patterns>
+	<directories/>
+	<audio-files/>
+	<image-files/>
+	<other-files/>
+	<text-files/>
+	<video-files/>
+</action>
+<action>
+	<name>Everyone on this PC can look</name>
+	<submenu>Who can use this</submenu>
+	<unique-id>access-shared</unique-id>
+	<command>chmod go+rX %F</command>
+	<description>Other users can open it, but only you can change it</description>
+	<range></range>
+	<patterns>*</patterns>
+	<directories/>
+	<audio-files/>
+	<image-files/>
+	<other-files/>
+	<text-files/>
+	<video-files/>
+</action>
+<action>
+	<name>Lock it (read-only)</name>
+	<submenu>Who can use this</submenu>
+	<unique-id>access-lock</unique-id>
+	<command>chmod a-w %F</command>
+	<description>Nobody can change it until you unlock it</description>
+	<range></range>
+	<patterns>*</patterns>
+	<directories/>
+	<audio-files/>
+	<image-files/>
+	<other-files/>
+	<text-files/>
+	<video-files/>
+</action>
+<action>
+	<name>Unlock it (editable)</name>
+	<submenu>Who can use this</submenu>
+	<unique-id>access-unlock</unique-id>
+	<command>chmod u+w %F</command>
+	<description>You can change it again</description>
+	<range></range>
+	<patterns>*</patterns>
+	<directories/>
+	<audio-files/>
+	<image-files/>
+	<other-files/>
+	<text-files/>
+	<video-files/>
+</action>
+<action>
+	<name>Let it run as a program</name>
+	<submenu>Who can use this</submenu>
+	<unique-id>access-run</unique-id>
+	<command>chmod u+x %F</command>
+	<description>For scripts and apps you trust</description>
+	<range></range>
+	<patterns>*</patterns>
+	<other-files/>
+	<text-files/>
+</action>
+<action>
+	<name>Stop it running as a program</name>
+	<submenu>Who can use this</submenu>
+	<unique-id>access-norun</unique-id>
+	<command>chmod a-x %F</command>
+	<description>It opens as a file instead of running</description>
+	<range></range>
+	<patterns>*</patterns>
+	<other-files/>
+	<text-files/>
+</action>
+</actions>

@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+URL=https://norwd.codeberg.page/quotes/en.json
+target=$(readlink -f "${XDG_CONFIG_HOME:-$HOME/.config}/zsh/quotes.txt")
+tmp=$(mktemp "$target.XXXXXX")
+trap 'rm -f "$tmp"' EXIT
+
+curl -fsSL --max-time 20 "$URL" |
+    jq -r '.[] | select((.text | length) <= 120)
+        | [(.text | gsub("[\t\n]"; " ") | gsub("  +"; " ")), .author] | @tsv' >"$tmp"
+count=$(wc -l <"$tmp")
+((count >= 50)) || { echo "quotes-update: only $count quotes, keeping the old list" >&2; exit 1; }
+chmod 644 "$tmp"
+mv "$tmp" "$target"
+echo "quotes-update: $count quotes in $target"

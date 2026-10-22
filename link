@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd "$(dirname "$(readlink -f "$0")")"
+
+config=${XDG_CONFIG_HOME:-$HOME/.config}
+
+target() {
+    case $1 in
+        home) echo "$HOME" ;;
+        bin) echo "$HOME/.local/bin" ;;
+        systemd) echo "$config/systemd/user" ;;
+        thunar) echo "$config/Thunar" ;;
+        *) echo "$config/$1" ;;
+    esac
+}
+
+usage() {
+    cat <<'EOF'
+Link packages into place with GNU Stow; each top-level directory is one package.
+
+  ./link [package...]           link (or relink) the packages, all of them by default
+  ./link --check [package...]   fail if a package file isn't linked yet
+  ./link --unlink package...    remove a package's links
+
+home -> ~, bin -> ~/.local/bin, systemd -> ~/.config/systemd/user, thunar -> ~/.config/Thunar,
+anything else -> ~/.config/<package>
+EOF
+}
+
+action="link"
+case ${1:-} in
+    --check) action="check" && shift ;;
+    --unlink) action="unlink" && shift ;;
+    -h | --help) usage && exit 0 ;;
+    -*) usage >&2 && exit 2 ;;
+esac
+
+if (($#)); then
+    packages=("${@%/}")
+else
+    mapfile -t packages < <(find . -mindepth 1 -maxdepth 1 -type d ! -name '.*' ! -name graphify-out -printf '%f\n' | sort)
+fi
+
+stowed() {
+    stow --dotfiles --no-folding -t "$(target "$1")" "${@:2}" "$1"
+}
+
+status=0
+for pkg in "${packages[@]}"; do
+    [[ -d $pkg ]] || { echo "link: no package $pkg" >&2 && exit 2; }
+    case $action in
+        link)
+            mkdir -p "$(target "$pkg")"
+            stowed "$pkg" -R
+            ;;
+        unlink) stowed "$pkg" -D ;;
+        check)
+            plan=$([[ -d $(target "$pkg") ]] && stowed "$pkg" -n -v 2>&1 || echo LINK)
+            if grep -qE '^(LINK|WARNING!)' <<<"$plan"; then
+                echo "$pkg is not fully linked: run ./link $pkg"
+                status=1
+            fi
+            ;;
+    esac
+done
+exit "$status"

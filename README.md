@@ -21,7 +21,7 @@ sudo pacman -S --needed git stow hyprland uwsm kitty rofi quickshell awww matuge
   ttf-nunito ttf-0xproto-nerd papirus-icon-theme capitaine-cursors \
   adw-gtk-theme qt6ct xdg-desktop-portal-gtk wireplumber playerctl
 git clone git@github.com:m-queszel/linux-dotfiles.git ~/dotfiles
-cd ~/dotfiles && ./install.sh   # stow, seed colors, enable user services
+cd ~/dotfiles && ./install.sh   # link, seed colors, enable user services
 chsh -s /usr/bin/zsh            # then log out and back in
 ```
 
@@ -42,24 +42,25 @@ Then pick a wallpaper: put images in `~/Pictures/Wallpapers` and press SUPER+W.
 
 ## Layout
 
-Each top-level directory is a stow package mirroring `$HOME`; `dot-` becomes `.`
-(`kitty/dot-config/kitty/kitty.conf` → `~/.config/kitty/kitty.conf`).
-`--no-folding` links files one by one, so generated files never land in the repo.
+Each top-level directory holds one app's files and is linked into place with GNU Stow by `./link`:
+`kitty/kitty.conf` → `~/.config/kitty/kitty.conf`. The exceptions are `home/` → `~` (`dot-` becomes `.`),
+`bin/` → `~/.local/bin`, `systemd/` → `~/.config/systemd/user` and `thunar/` → `~/.config/Thunar`.
+Files are linked one by one, so generated files never land in the repo.
 
 ```bash
-stow -R hypr       # restow after adding a file (it isn't live until then)
-stow -n -v hypr    # dry run
-stow -D hypr       # unlink
+./link hypr            # relink after adding a file (it isn't live until then)
+./link --check         # what isn't linked yet
+./link --unlink hypr   # remove the links
 ```
 
 Colors: `wallpaper <image>` (or `--pick`, `--random`, `--light`, `--dark`) sets the image and
-runs matugen, which renders `matugen/dot-config/matugen/templates/*` into each app's config.
+runs matugen, which renders `matugen/templates/*` into each app's config.
 Generated files are not tracked; add a template instead of hardcoding a color.
 
 ## Development
 
 `.githooks/pre-commit` runs on commit (`.githooks/pre-commit --all` for the whole repo):
-stow check, Hyprland `--verify-config`, stylua, shellcheck, `zsh -n`, Python compile,
+link check, Hyprland `--verify-config`, stylua, shellcheck, `zsh -n`, Python compile,
 rofi theme parse, qmllint + qmlformat, and lua-language-server (`--all` only).
 
 ```bash
