@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+state=${XDG_STATE_HOME:-$HOME/.local/state}/theme
+config=${XDG_CONFIG_HOME:-$HOME/.config}
+stage=$state/staged
+s=org.gnome.desktop.interface
+
+declare -A live=(
+    [colors.json]=$state/colors.json
+    [hyprland-colors.lua]=$config/hypr/colors.lua
+    [qt6ct-colors.conf]=$config/qt6ct/colors/matugen.conf
+    [qt6ct.conf]=$config/qt6ct/qt6ct.conf
+    [kitty-colors.conf]=$config/kitty/colors.conf
+)
+
+theme=PixelInk-0 icons=PixelInk-0
+[[ $(gsettings get $s gtk-theme) == "'PixelInk-0'" ]] && theme=PixelInk-1
+[[ $(gsettings get $s icon-theme) == "'PixelInk-0'" ]] && icons=PixelInk-1
+
+go_live() {
+    if [[ -f $stage/$1 ]]; then
+        mkdir -p "$(dirname "${live[$1]}")"
+        mv -f "$stage/$1" "${live[$1]}"
+    fi
+}
+
+prepare() {
+    local colors=$stage/colors.json
+    [[ -f $colors ]] || colors=${live[colors.json]}
+    python3 -I "$config/pixel-icons/render.py" "$colors" "$icons"
+}
+
+commit() {
+    local mode=${1:-}
+    [[ $# -gt 0 ]] && shift
+    [[ ${1:-} == -- ]] && shift
+
+    (($#)) && "$@" &
+
+    {
+        echo "[/]"
+        echo "gtk-theme='$theme'"
+        echo "icon-theme='$icons'"
+        [[ -n $mode ]] && echo "color-scheme='prefer-$mode'"
+    } | dconf load /org/gnome/desktop/interface/
+
+    sleep 0.04
+    if [[ -f $stage/colors.json ]] && command -v qs >/dev/null; then
+        cp "$stage/colors.json" "$state/next-colors.json"
+        # shellcheck disable=SC2086
+        if [[ -n ${THEME_BLOOM:-} ]]; then
+            qs ipc call quasar bloom "$state/next-colors.json" $THEME_BLOOM >/dev/null 2>&1 || true
+        else
+            qs ipc call quasar recolor "$state/next-colors.json" >/dev/null 2>&1 || true
+        fi
+    fi
+
+    sleep 0.045
+    go_live kitty-colors.conf
+    pkill -USR1 -x kitty || true
+    go_live colors.json
+
+    sleep 0.015
+    for f in "${!live[@]}"; do
+        go_live "$f"
+    done
+    tmux source-file -q "$config/tmux/colors.conf" 2>/dev/null || true
+    if grep -q 'snap = true' "${live[hyprland-colors.lua]}" 2>/dev/null; then
+        (sleep 0.3 && sed -i 's/snap = true/snap = false/' "${live[hyprland-colors.lua]}") &
+    fi
+    wait
+
+    setsid -f pixel-art-refresh >/dev/null 2>&1
+}
+
+case ${1:-} in
+    --prepare) prepare ;;
+    --commit)
+        shift
+        commit "$@"
+        ;;
+    *)
+        prepare
+        commit "${1:-}"
+        ;;
+esac

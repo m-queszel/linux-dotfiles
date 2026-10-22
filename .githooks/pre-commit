@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Run every check on the whole repo:  .githooks/pre-commit --all
 set -uo pipefail
 
 cd "$(git rev-parse --show-toplevel)" || exit 1
@@ -19,7 +18,8 @@ for f in "${files[@]}"; do
         *.lua) lua+=("$f") ;;
         *.sh) sh+=("$f") ;;
         *.py) py+=("$f") ;;
-        bash/dot-*) sh+=("$f") ;;
+        home/dot-zshrc) zsh+=("$f") ;;
+        home/dot-*) sh+=("$f") ;;
         zsh/*.txt) ;;
         zsh/*) zsh+=("$f") ;;
         *.qml) qml+=("$f") ;;
@@ -43,16 +43,10 @@ run() {
 need() { command -v "$1" >/dev/null || { printf '\e[33m! %s not installed, skipping\e[0m\n' "$1"; return 1; }; }
 
 if need stow; then
-    stowed() {
-        local pkgs out
-        mapfile -t pkgs < <(find . -mindepth 1 -maxdepth 1 -type d ! -name '.*' ! -name graphify-out -printf '%f\n')
-        out=$(stow -n -v "${pkgs[@]}" 2>&1) || { echo "$out"; return 1; }
-        ! grep -E '^(LINK|WARNING!)' <<<"$out" || { echo "run: stow -R <package>"; return 1; }
-    }
-    run "every package file is stowed" stowed
+    run "every package file is linked" ./link --check
 fi
 if ((hypr)) && need Hyprland; then
-    cfg=hypr/dot-config/hypr/hyprland.lua
+    cfg=hypr/hyprland.lua
     verify() { Hyprland --verify-config -c "$cfg" 2>&1 | grep -q '^config ok$' || { Hyprland --verify-config -c "$cfg" 2>&1 | tail -5; return 1; }; }
     run "Hyprland --verify-config" verify
 fi
@@ -77,7 +71,6 @@ if ((${#py[@]})) && need python3; then
     run "python compile (${#py[@]} files)" pycompile "${py[@]}"
 fi
 if ((${#rasi[@]})) && need rofi; then
-    # rofi exits 0 on a broken .rasi; only "Failed to parse" on stderr reveals it
     rasiparse() {
         local f err bad=0
         for f in "$@"; do

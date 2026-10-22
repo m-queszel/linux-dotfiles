@@ -1,0 +1,122 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+WALL_DIR="${WALLPAPER_DIR:-$HOME/Pictures/Wallpapers}"
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/wallpaper"
+THUMB_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/wallpaper/thumbs"
+LIGHT_THRESHOLD=50
+
+die() {
+    printf 'wallpaper: %s\n' "$*" >&2
+    notify-send -u critical -a wallpaper "Wallpaper" "$*" 2>/dev/null || true
+    exit 1
+}
+
+images() {
+    find "$WALL_DIR" -maxdepth 1 -type f \
+        \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' -o -iname '*.gif' \) |
+        sort
+}
+
+lightness() {
+    magick "${1}[0]" -alpha off -resize 64x64! -colorspace Lab -channel R -separate \
+        -format '%[fx:mean*100]' info: | xargs printf '%.0f'
+}
+
+cursor_pos() {
+    hyprctl -j cursorpos 2>/dev/null | jq -er --argjson mons "$(hyprctl -j monitors 2>/dev/null)" '
+        def frac: if . < 0.001 then 0.001 elif . > 0.999 then 0.999 else . end | tostring;
+        . as $c | $mons[] | select(.focused) | (.width / .scale) as $w | (.height / .scale) as $h |
+        "\(($c.x - .x) / $w | frac),\(1 - ($c.y - .y) / $h | frac)"' 2>/dev/null || echo center
+}
+
+thumbnail() {
+    local src=$1 dst
+    dst="$THUMB_DIR/$(basename "${src%.*}").jpg"
+    if [[ ! "$dst" -nt "$src" ]]; then
+        magick "${src}[0]" -alpha off -thumbnail '480x200^' -gravity center -extent 480x200 -quality 85 "$dst"
+    fi
+    printf '%s' "$dst"
+}
+
+pick() {
+    mkdir -p "$THUMB_DIR"
+    local f choice
+    choice=$(
+        while IFS= read -r f; do
+            printf '%s\0icon\x1f%s\n' "$(basename "$f")" "$(thumbnail "$f")"
+        done < <(images) |
+            rofi -dmenu -i -p "Wallpaper" -show-icons -theme-str '
+                window { width: 1240px; border-radius: 14px; }
+                listview { columns: 3; lines: 2; flow: horizontal; spacing: 12px; }
+                element { orientation: vertical; padding: 10px; border-radius: 14px; }
+                element-icon { size: 360px; }
+                element-text { horizontal-align: 0.5; }'
+    ) || exit 0
+    [[ -n "$choice" ]] && printf '%s/%s' "$WALL_DIR" "$choice"
+}
+
+random_image() {
+    local current
+    current=$(readlink "$STATE_DIR/current" 2>/dev/null || true)
+    images | grep -vxF -- "$current" | shuf -n 1 || true
+}
+
+apply() {
+    local img=$1 mode=${2:-}
+    [[ -f "$img" ]] || die "not a file: $img"
+    img=$(realpath "$img")
+
+    mkdir -p "$STATE_DIR"
+    exec 9>"$STATE_DIR/lock"
+    flock 9
+
+    awww query >/dev/null 2>&1 || die "awww-daemon isn't running (systemctl --user start awww-daemon)"
+
+    if [[ -z "$mode" ]]; then
+        if (($(lightness "$img") >= LIGHT_THRESHOLD)); then mode=light; else mode=dark; fi
+    fi
+
+    local reload pos bloom
+    reload="$(dirname "$(readlink -f "$0")")/theme-reload"
+    pos=$(cursor_pos)
+    bloom=$(hyprctl -j cursorpos 2>/dev/null | jq -r '"\(.x) \(.y)"' 2>/dev/null || true)
+    python3 -I "${XDG_CONFIG_HOME:-$HOME/.config}/quickshell/quasar.py" blur \
+        "${XDG_CACHE_HOME:-$HOME/.cache}/quasar" "$img" &
+    local glass=$!
+    matugen image "$img" -m "$mode" -t scheme-tonal-spot >/dev/null || die "matugen failed for $img"
+    "$reload" --prepare
+    wait "$glass" || echo "wallpaper: quasar glass failed" >&2
+    THEME_BLOOM=$bloom "$reload" --commit "$mode" -- awww img "$img" --transition-type grow --transition-pos "$pos" \
+        --transition-bezier .05,.7,.1,1 --transition-duration 1.2 --transition-fps 240
+
+    ln -sfn "$img" "$STATE_DIR/current"
+}
+
+mode=""
+target=""
+for arg in "$@"; do
+    case "$arg" in
+        --light) mode=light ;;
+        --dark) mode=dark ;;
+        --pick) target=$(pick) ;;
+        --random) target=$(random_image) && [[ -n "$target" ]] || die "no other wallpaper in $WALL_DIR" ;;
+        -h | --help)
+            cat <<'EOF'
+Set a wallpaper and re-theme the whole desktop from it.
+
+  wallpaper <image> [--light|--dark]   use this image (light/dark auto-detected unless forced)
+  wallpaper --pick                      choose from the wallpaper folder in rofi
+  wallpaper --random                    pick a different random one
+
+Colors come from matugen (~/.config/matugen/config.toml); the image is set by awww-daemon.
+EOF
+            exit 0
+            ;;
+        -*) die "unknown option: $arg" ;;
+        *) target=$arg ;;
+    esac
+done
+
+[[ -n "$target" ]] || exit 0
+apply "$target" "$mode"

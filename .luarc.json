@@ -4,7 +4,7 @@
   "runtime.path": [
     "?.lua",
     "?/init.lua",
-    "hypr/dot-config/hypr/?.lua"
+    "hypr/?.lua"
   ],
   "workspace.library": [
     "/usr/share/hypr/stubs"

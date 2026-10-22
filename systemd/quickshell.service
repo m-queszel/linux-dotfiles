@@ -1,0 +1,14 @@
+[Unit]
+Description=Quickshell desktop shell (bar; config in ~/.config/quickshell)
+Documentation=https://quickshell.org/docs/
+PartOf=graphical-session.target
+After=graphical-session.target
+Requisite=graphical-session.target
+
+[Service]
+Environment=QT_QUICK_BACKEND=software
+ExecStart=/usr/bin/qs
+Restart=on-failure
+
+[Install]
+WantedBy=graphical-session.target
