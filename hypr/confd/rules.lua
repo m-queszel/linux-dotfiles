@@ -97,6 +97,14 @@ hl.window_rule({
 })
 
 hl.layer_rule({
+    name = "quickshell-drawer",
+    match = { namespace = "^quickshell-drawer$" },
+    blur = true,
+    ignore_alpha = 0.3,
+    no_anim = true,
+})
+
+hl.layer_rule({
     name = "quickshell-quasar",
     match = { namespace = "^quickshell-quasar$" },
     no_anim = true,

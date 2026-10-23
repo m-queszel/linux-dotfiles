@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+read -r app wx ww < <(hyprctl clients -j | jq -r 'first(.[] | select((.class | startswith("drawer-")) and .workspace.name != "special:drawer")) | "\(.class | ltrimstr("drawer-")) \(.at[0]) \(.size[0])"')
+[[ -n ${app:-} ]] || exit 0
+case $app in
+    spotify) match=(--match "cmdline:spotify_player") ;;
+    discord) match=(--match "cmdline:discordo") ;;
+    *) exit 0 ;;
+esac
+read -r x y < <(hyprctl cursorpos | tr -d ',')
+
+keys() {
+    for key in "$@"; do
+        kitten @ send-key "${match[@]}" "$key"
+    done
+}
+
+if [[ ${1:-} == double ]]; then
+    [[ $app == discord ]] || exit 0
+    ((x < wx + ww / 5)) && keys ctrl+g v
+    exit 0
+fi
+
+fifo=$(mktemp -u "${XDG_RUNTIME_DIR:-/tmp}/drawer-menu.XXXXXX")
+mkfifo -m 600 "$fifo"
+trap 'rm -f "$fifo"; hyprctl eval "Drawer.menu = false" >/dev/null 2>&1 || true' EXIT
+
+hyprctl eval "Drawer.menu = true" >/dev/null
+qs ipc call drawer menu "$fifo" "$x" "$y" "$app" >/dev/null
+choice=$(timeout 60 head -n1 "$fifo" || true)
+
+case $choice in
+    copy) kitten @ action "${match[@]}" copy_to_clipboard ;;
+    paste) kitten @ action "${match[@]}" paste_from_clipboard ;;
+    voice) keys ctrl+g v ;;
+    mute) keys alt+v ;;
+    deafen) keys alt+d ;;
+    play) keys space ;;
+    next) keys n ;;
+    previous) keys p ;;
+    lyrics) keys l ;;
+    search) keys slash ;;
+esac

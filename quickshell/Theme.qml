@@ -13,6 +13,7 @@ Singleton {
     readonly property int pillHeight: 36
     readonly property int borderWidth: 2
     readonly property int shadowOffset: 5
+    readonly property int shadowGap: 7
 
     readonly property var enterCurve: [0.05, 0.7, 0.1, 1, 1, 1]
     readonly property var exitCurve: [0.3, 0, 0.8, 0.15, 1, 1]

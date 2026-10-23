@@ -5,4 +5,5 @@ ShellRoot {
     Notifications {}
     FileGlitch {}
     ThunarQuasar {}
+    MediaDrawer {}
 }
