@@ -1,4 +1,5 @@
 local apps = require("confd/programs")
+local drawer = require("confd/drawer")
 
 local mainMod = "SUPER"
 
@@ -30,6 +31,7 @@ hl.bind(mainMod .. " + mouse:272", function()
 end, { non_consuming = true })
 hl.bind("mouse:272", function()
     dragged = nil
+    drawer.click()
 end, { release = true, ignore_mods = true, non_consuming = true })
 
 for i = 1, 10 do
@@ -50,8 +52,15 @@ end
 hl.bind(mainMod .. " + mouse_down", hl.dsp.focus({ workspace = "e+1" }))
 hl.bind(mainMod .. " + mouse_up", hl.dsp.focus({ workspace = "e-1" }))
 
-hl.bind(mainMod .. " + S", hl.dsp.workspace.toggle_special("magic"))
-hl.bind(mainMod .. " + SHIFT + S", hl.dsp.window.move({ workspace = "special:magic" }))
+hl.bind(mainMod .. " + grave", hl.dsp.workspace.toggle_special("magic"))
+hl.bind(mainMod .. " + SHIFT + grave", hl.dsp.window.move({ workspace = "special:magic" }))
+
+hl.bind(mainMod .. " + S", function()
+    drawer.toggle("spotify")
+end)
+hl.bind(mainMod .. " + D", function()
+    drawer.toggle("discord")
+end)
 
 hl.bind(mainMod .. " + mouse:272", hl.dsp.window.drag(), { mouse = true })
 hl.bind(mainMod .. " + mouse:273", hl.dsp.window.resize(), { mouse = true })

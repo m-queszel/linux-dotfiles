@@ -1,0 +1,52 @@
+[ui.border]
+normal_set = "plain"
+active_set = "plain"
+
+[theme.title]
+normal_style = { foreground = "gray" }
+active_style = { foreground = "red", attributes = "bold" }
+
+[theme.footer]
+normal_style = { foreground = "gray" }
+active_style = { foreground = "silver" }
+
+[theme.border]
+normal_style = { foreground = "gray" }
+active_style = { foreground = "red" }
+
+[theme.guilds_tree]
+graphics_color = "gray"
+online_style = { foreground = "green" }
+idle_style = { foreground = "yellow" }
+dnd_style = { foreground = "red" }
+offline_style = { foreground = "gray" }
+speaking_style = { foreground = "green", attributes = "bold" }
+voice_limit_style = { foreground = "blue" }
+
+[theme.members_tree]
+graphics_color = "gray"
+online_style = { foreground = "green" }
+idle_style = { foreground = "yellow" }
+dnd_style = { foreground = "red" }
+offline_style = { foreground = "gray" }
+
+[theme.scroll_bar]
+track_style = { foreground = "black" }
+thumb_style = { foreground = "gray" }
+
+[theme.messages_list]
+author_style = { foreground = "fuchsia", attributes = "bold" }
+mention_style = { foreground = "yellow", attributes = "bold" }
+emoji_style = { foreground = "green" }
+url_style = { foreground = "blue", underline = "solid" }
+attachment_style = { foreground = "gray" }
+selected_message_style = { background = "black" }
+
+[theme.mentions_list]
+selected_style = { foreground = "white", background = "black", attributes = "bold" }
+
+[theme.help]
+short_key_style = { foreground = "red" }
+short_desc_style = { foreground = "gray" }
+full_key_style = { foreground = "red" }
+full_desc_style = { foreground = "gray" }

@@ -259,6 +259,34 @@ Scope {
         onLoadFailed: root.bookmarks = 0
     }
 
+    function flushBlur() {
+        blurFlush.visible = true;
+        blurFlushOff.restart();
+    }
+
+    PanelWindow {
+        id: blurFlush
+
+        visible: false
+        anchors {
+            top: true
+            left: true
+        }
+        implicitWidth: 1
+        implicitHeight: 1
+        color: "transparent"
+        exclusionMode: ExclusionMode.Ignore
+        WlrLayershell.layer: WlrLayer.Bottom
+        WlrLayershell.namespace: "quickshell-quasar"
+        mask: Region {}
+    }
+
+    Timer {
+        id: blurFlushOff
+        interval: 150
+        onTriggered: blurFlush.visible = false
+    }
+
     component ShadowStrip: PanelWindow {
         id: strip
 
@@ -307,6 +335,7 @@ Scope {
             id: win
 
             required property var modelData
+            Component.onDestruction: root.flushBlur()
             readonly property var ipc: modelData.lastIpcObject
             readonly property var mon: modelData.monitor
             readonly property bool covered: Hyprland.toplevels.values.some(t => t !== win.modelData && t.lastIpcObject?.fullscreen && t.lastIpcObject.workspace?.id === win.ipc?.workspace?.id)
@@ -331,6 +360,26 @@ Scope {
                 slide: win.slide
                 fade: win.fade
                 visible: win.shown
+            }
+
+            PanelWindow {
+                id: grip
+
+                visible: win.shown && root.sidebarShown
+                anchors {
+                    bottom: true
+                    left: true
+                }
+                margins {
+                    left: (win.ipc?.at[0] ?? 0) + win.slide + root.sidebarW - 8 - grip.screen.x
+                    bottom: grip.screen.y + grip.screen.height - (win.ipc?.at[1] ?? 0) - (win.ipc?.size[1] ?? 0)
+                }
+                implicitWidth: 32
+                implicitHeight: Math.max(1, (win.ipc?.size[1] ?? 1) - root.toolbarH)
+                color: "transparent"
+                exclusionMode: ExclusionMode.Ignore
+                WlrLayershell.layer: WlrLayer.Top
+                WlrLayershell.namespace: "quickshell-quasar"
             }
 
             PanelWindow {

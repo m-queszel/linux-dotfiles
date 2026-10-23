@@ -1,0 +1,23 @@
+[[themes]]
+name = "rice"
+
+[themes.component_style]
+block_title = { fg = "Red", modifiers = ["Bold"] }
+border = { fg = "BrightBlack" }
+playback_status = { fg = "Yellow", modifiers = ["Bold"] }
+playback_track = { fg = "BrightWhite", modifiers = ["Bold"] }
+playback_artists = { fg = "Cyan" }
+playback_album = { fg = "BrightBlack" }
+playback_genres = { fg = "BrightBlack", modifiers = ["Italic"] }
+playback_metadata = { fg = "BrightBlack" }
+playback_progress_bar = { fg = "Red" }
+playback_progress_bar_unfilled = { fg = "Black" }
+current_playing = { fg = "Red", modifiers = ["Bold"] }
+page_desc = { fg = "Red", modifiers = ["Bold"] }
+playlist_desc = { fg = "BrightBlack", modifiers = ["Dim"] }
+table_header = { fg = "White", modifiers = ["Bold"] }
+selection = { fg = "BrightWhite", bg = "Black", modifiers = ["Bold"] }
+like = { fg = "Red" }
+lyrics_played = { fg = "BrightBlack" }
+lyrics_playing = { fg = "Red", modifiers = ["Bold"] }
+visualization = { low = "Green", mid = "Yellow", high = "Red" }

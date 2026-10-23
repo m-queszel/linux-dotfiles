@@ -16,3 +16,5 @@ CLAUDE.md
 graphify-out/
 
 __pycache__/
+
+spotify-player/client_id
